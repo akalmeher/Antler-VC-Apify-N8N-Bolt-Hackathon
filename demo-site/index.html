@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Media Luna Taqueria — Austin, TX</title>
+<meta name="description" content="Counter-service tacos, breakfast plates and weekday lunch on South Lamar in Austin, Texas.">
+<style>
+  :root {
+    --ink: #241c17;
+    --muted: #6b5d52;
+    --rule: #b8a890;
+    --paper: #fdfaf5;
+    --accent: #b4451f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  header { text-align: center; border-bottom: 3px double var(--rule); padding-bottom: 26px; }
+  .mark {
+    font-size: 12px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  h1 {
+    margin: 10px 0 6px;
+    font-size: 44px;
+    line-height: 1.05;
+    letter-spacing: -0.5px;
+  }
+  .tagline { margin: 0; color: var(--muted); font-style: italic; }
+  .meta {
+    margin-top: 18px;
+    font-size: 14px;
+    color: var(--muted);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  .meta strong { color: var(--ink); }
+
+  h2 {
+    font-size: 15px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin: 44px 0 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .note {
+    margin: 0 0 18px;
+    font-size: 14px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .item { margin: 0 0 16px; }
+  .row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .name { font-weight: 700; }
+  .dots {
+    flex: 1;
+    border-bottom: 1px dotted var(--rule);
+    transform: translateY(-4px);
+  }
+  .price {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .desc { margin: 2px 0 0; font-size: 15px; color: var(--muted); }
+
+  .callout {
+    margin: 22px 0 0;
+    padding: 16px 18px;
+    background: #fff4ec;
+    border-left: 4px solid var(--accent);
+  }
+  .callout .name { color: var(--accent); }
+
+  footer {
+    margin-top: 52px;
+    padding-top: 20px;
+    border-top: 3px double var(--rule);
+    text-align: center;
+    font-size: 14px;
+    color: var(--muted);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="mark">Est. 2019 &middot; South Lamar</div>
+    <h1>Media Luna Taqueria</h1>
+    <p class="tagline">Masa ground daily. Tacos served all day.</p>
+    <div class="meta">
+      2118 S Lamar Blvd, Austin, TX 78704 &middot; (512) 555&#8209;0184<br>
+      <strong>Mon&ndash;Fri 7am&ndash;3pm</strong> &middot; <strong>Sat&ndash;Sun 8am&ndash;4pm</strong> &middot; Counter service, cash or card
+    </div>
+  </header>
+
+  <h2>Breakfast</h2>
+  <p class="note">Served 7am&ndash;11am. Corn or flour tortillas, made in house.</p>
+
+  <div class="item">
+    <div class="row"><span class="name">Bacon, Egg &amp; Cheese Taco</span><span class="dots"></span><span class="price">$3.25</span></div>
+    <p class="desc">Thick-cut bacon, scrambled egg, melted Monterey Jack.</p>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Potato, Egg &amp; Cheese Taco</span><span class="dots"></span><span class="price">$3.25</span></div>
+    <p class="desc">Crisped potato, egg, cheese, salsa verde on the side.</p>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Chorizo &amp; Egg Taco</span><span class="dots"></span><span class="price">$3.75</span></div>
+    <p class="desc">House chorizo, egg, pickled red onion.</p>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Breakfast Burrito</span><span class="dots"></span><span class="price">$8.25</span></div>
+    <p class="desc">Eggs, potato, refried beans, cheese, bacon or chorizo, chipotle crema.</p>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Migas Plate</span><span class="dots"></span><span class="price">$10.50</span></div>
+    <p class="desc">Eggs scrambled with tortilla chips, pico and queso fresco. Beans and tortillas included.</p>
+  </div>
+
+  <h2>Tacos</h2>
+  <p class="note">Available all day. Three or more, any combination, add rice and beans for $3.</p>
+
+  <div class="item">
+    <div class="row"><span class="name">Al Pastor</span><span class="dots"></span><span class="price">$3.50</span></div>
+    <p class="desc">Trompo pork, grilled pineapple, cilantro, onion.</p>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Carnitas</span><span class="dots"></span><span class="price">$3.50</span></div>
+    <p class="desc">Slow-braised pork shoulder, salsa verde cruda.</p>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Barbacoa</span><span class="dots"></span><span class="price">$3.95</span></div>
+    <p class="desc">Beef cheek cooked overnight, lime, white onion.</p>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Pollo Asado</span><span class="dots"></span><span class="price">$3.50</span></div>
+    <p class="desc">Citrus-marinated chicken thigh off the plancha.</p>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Calabacita (v)</span><span class="dots"></span><span class="price">$3.25</span></div>
+    <p class="desc">Charred squash, corn, poblano, avocado salsa.</p>
+  </div>
+
+  <h2>Lunch</h2>
+  <p class="note">Served 11am&ndash;3pm daily.</p>
+
+  <div class="item">
+    <div class="row"><span class="name">Taquero Plate</span><span class="dots"></span><span class="price">$12.50</span></div>
+    <p class="desc">Any three tacos with rice, refried beans and chips.</p>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Carne Guisada Plate</span><span class="dots"></span><span class="price">$13.75</span></div>
+    <p class="desc">Beef tips in gravy, rice, beans, two flour tortillas.</p>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Quesabirria Trio</span><span class="dots"></span><span class="price">$14.25</span></div>
+    <p class="desc">Three griddled cheese tacos with a cup of consomé for dipping.</p>
+  </div>
+
+<!-- ==============================================================================
+     ==============================================================================
+     ###  DEMO CHANGE GOES HERE  ###  DEMO CHANGE GOES HERE  ###
+     ==============================================================================
+
+     ON STAGE, DO EXACTLY THIS:
+       1. Copy the markup between the two COPY lines below.
+       2. Paste it directly UNDER this whole comment block.
+       3. Save, redeploy, confirm the price is live in a browser, then hit Rescan.
+
+     This adds a $15 weekday lunch special, which undercuts the owner's own
+     $12.95 lunch plate positioning and should surface as a 'change' signal.
+
+     vvvvvvvvvvvvvvvvvvvvvvv  COPY FROM HERE  vvvvvvvvvvvvvvvvvvvvvvv
+
+  <div class="item callout">
+    <div class="row"><span class="name">Weekday Lunch Special</span><span class="dots"></span><span class="price">$15</span></div>
+    <p class="desc">Monday through Friday, 11am&ndash;2pm. Any three tacos plus chips &amp; queso and an agua fresca. Dine in or to go.</p>
+  </div>
+
+     ^^^^^^^^^^^^^^^^^^^^^^^  COPY TO HERE  ^^^^^^^^^^^^^^^^^^^^^^^
+
+     ==============================================================================
+     ==============================================================================
+-->
+
+  <h2>Sides &amp; Drinks</h2>
+
+  <div class="item">
+    <div class="row"><span class="name">Chips &amp; Queso</span><span class="dots"></span><span class="price">$5.75</span></div>
+    <p class="desc">Chile queso with warm tortilla chips.</p>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Chips &amp; Guacamole</span><span class="dots"></span><span class="price">$6.50</span></div>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Elote en Vaso</span><span class="dots"></span><span class="price">$4.50</span></div>
+    <p class="desc">Corn, crema, cotija, lime, chile.</p>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Agua Fresca</span><span class="dots"></span><span class="price">$3.25</span></div>
+    <p class="desc">Horchata, jamaica or pepino-limón.</p>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Mexican Coke</span><span class="dots"></span><span class="price">$3.50</span></div>
+  </div>
+  <div class="item">
+    <div class="row"><span class="name">Café de Olla</span><span class="dots"></span><span class="price">$3.00</span></div>
+    <p class="desc">Drip coffee with cinnamon and piloncillo. Free refills before 10am.</p>
+  </div>
+
+  <footer>
+    Media Luna Taqueria &middot; 2118 S Lamar Blvd, Austin, TX 78704<br>
+    Catering for 10 or more, 48 hours notice. Prices subject to change.
+  </footer>
+
+</div>
+</body>
+</html>

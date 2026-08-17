@@ -1,0 +1,18 @@
+{
+  "_comment": "Input for the apify/website-content-crawler actor. n8n overwrites startUrls with the competitor's page_urls at runtime. Field names verified against the actor's published input schema.",
+  "startUrls": [
+    { "url": "https://example.com/menu" }
+  ],
+  "_comment_crawlerType": "adaptive, not cheerio: Toast/Popmenu/Square menu widgets render prices client-side, and a JS-free crawl returns markdown with the menu body missing, which the diff reads as 'no change' instead of an error. Adaptive uses raw HTTP where it can, so browser cost is only paid on pages that need it.",
+  "crawlerType": "playwright:adaptive",
+  "maxCrawlDepth": 0,
+  "maxCrawlPages": 3,
+  "maxResults": 3,
+  "htmlTransformer": "none",
+  "removeElementsCssSelector": "nav, footer, script, style, noscript",
+  "saveMarkdown": true,
+  "saveHtmlAsFile": false,
+  "saveScreenshots": false,
+  "summarize": false,
+  "proxyConfiguration": { "useApifyProxy": true }
+}

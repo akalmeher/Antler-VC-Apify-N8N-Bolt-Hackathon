@@ -1,32 +1,42 @@
-# React + TypeScript + Vite
+# Competitor Radar
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Automated competitor intelligence for local restaurants. An owner adds their business and a competitor's menu/pricing URLs. Those pages get crawled on a schedule, each new crawl is diffed against the previous snapshot, and an LLM turns the diff into actionable signals.
 
-Currently, two official plugins are available:
+> Competitor launched a $15 lunch special. This overlaps with your lunch offering. Consider testing a weekday bundle.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Restaurants are the only supported vertical in the MVP.
 
-## React Compiler
+## Architecture
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Bolt frontend** (built elsewhere, not in this repo) — reads Supabase directly with the anon key, calls n8n webhooks to trigger work.
+- **n8n** — owns all database writes using the service_role key, orchestrates every scan.
+- **Apify** — crawls the competitor pages via `apify/website-content-crawler`.
+- **Supabase** — Postgres, RLS on, read-only to the frontend.
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```mermaid
+flowchart LR
+  Bolt -->|webhook| n8n
+  n8n -->|crawl| Apify
+  Apify -->|markdown| n8n
+  n8n -->|writes| Supabase
+  Supabase -->|reads| Bolt
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Setup
+
+1. Create a Supabase project.
+2. Run `supabase/schema.sql` in the SQL editor.
+3. Run `supabase/seed.sql` for the demo business and competitor.
+4. Import the n8n credentials listed in `n8n/README.md` (Supabase service_role, Apify, OpenAI).
+5. Copy `.env.example` and fill in the values.
+
+## Layout
+
+```
+supabase/schema.sql                     tables, indexes, RLS
+supabase/seed.sql                       demo business + competitors
+demo-site/index.html                    fake competitor page we edit live on stage
+n8n/README.md                           webhook and scan contract
+apify/website-content-crawler-input.json  actor input template
+docs/bolt-handoff.md                    what the frontend needs
+```

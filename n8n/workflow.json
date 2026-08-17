@@ -1,0 +1,1011 @@
+{
+  "name": "Competitor Radar - Scan",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "add-competitor",
+        "responseMode": "onReceived",
+        "options": {
+          "allowedOrigins": "*",
+          "responseCode": 202,
+          "responseData": "{\"accepted\":true}"
+        }
+      },
+      "id": "Webhook: Add Competitor",
+      "name": "Webhook: Add Competitor",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        -260
+      ],
+      "webhookId": "a1b2c3d4-0001-4000-8000-000000000001",
+      "notes": "POST /webhook/add-competitor  {business_id, name, url, page_urls[]}\nResponds on receipt (202) and keeps executing, so the crawl never blocks the caller."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=<<SUPABASE_URL>>/rest/v1/competitors",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ business_id: $json.body.business_id, name: $json.body.name, url: $json.body.url, page_urls: (Array.isArray($json.body.page_urls) && $json.body.page_urls.length ? $json.body.page_urls.slice(0, 3) : [$json.body.url]), status: 'scanning' }) }}"
+      },
+      "id": "Insert Competitor (scanning)",
+      "name": "Insert Competitor (scanning)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -620,
+        -260
+      ],
+      "notes": "return=representation gives back the created row, so the new id flows straight into the shared scan path."
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rescan",
+        "responseMode": "onReceived",
+        "options": {
+          "allowedOrigins": "*",
+          "responseCode": 202,
+          "responseData": "{\"accepted\":true}"
+        }
+      },
+      "id": "Webhook: Rescan",
+      "name": "Webhook: Rescan",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        40
+      ],
+      "webhookId": "a1b2c3d4-0002-4000-8000-000000000002",
+      "notes": "POST /webhook/rescan  {competitor_id}\nResponds on receipt (202) and keeps executing."
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=<<SUPABASE_URL>>/rest/v1/competitors?id=eq.{{ $json.body.competitor_id }}",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'scanning', last_error: null }) }}"
+      },
+      "id": "Mark Competitor Scanning",
+      "name": "Mark Competitor Scanning",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -620,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "Schedule: Every 6 Hours",
+      "name": "Schedule: Every 6 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -880,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=<<SUPABASE_URL>>/rest/v1/competitors?status=eq.active&select=id,business_id&order=created_at.asc",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Fetch Active Competitors",
+      "name": "Fetch Active Competitors",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -620,
+        340
+      ],
+      "notes": "Returns a JSON array, which the HTTP Request node splits into one item per competitor. That split IS the fan-out: every downstream node then runs once per competitor."
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=<<SUPABASE_URL>>/rest/v1/competitors?id=eq.{{ $json.id }}&select=*,businesses(*)&limit=1",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Load Competitor + Business",
+      "name": "Load Competitor + Business",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -340,
+        40
+      ],
+      "notes": "All three entry points converge here. PostgREST resource embedding pulls the parent business in the same request, so there is no second lookup and no item-alignment risk."
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===========================================================================\n// SWAPPABLE NODE. This is the ONLY place the Apify actor input is defined.\n// Mirrors apify/website-content-crawler-input.json. To change the actor input,\n// edit the object inside buildApifyInput() and nothing else in this workflow.\n// startUrls is the only field built at runtime.\n// ===========================================================================\nfunction buildApifyInput(pageUrls) {\n  return {\n    startUrls: pageUrls.map(function (u) { return { url: u }; }),\n    crawlerType: 'playwright:adaptive',\n    maxCrawlDepth: 0,\n    maxCrawlPages: 3,\n    maxResults: 3,\n    htmlTransformer: 'none',\n    removeElementsCssSelector: 'nav, footer, script, style, noscript',\n    saveMarkdown: true,\n    saveHtmlAsFile: false,\n    saveScreenshots: false,\n    summarize: false,\n    proxyConfiguration: { useApifyProxy: true }\n  };\n}\n\nconst out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const c = items[i].json || {};\n  const business = c.businesses || {};\n\n  let pageUrls = Array.isArray(c.page_urls) ? c.page_urls : [];\n  pageUrls = pageUrls\n    .map(function (u) { return String(u === null || u === undefined ? '' : u).trim(); })\n    .filter(function (u) { return u.length > 0; })\n    .slice(0, 3);\n  // competitors.page_urls has a 1..3 cardinality CHECK, so it should never be\n  // empty, but fall back to the main url rather than crawling nothing.\n  if (pageUrls.length === 0 && c.url) pageUrls = [String(c.url)];\n\n  out.push({\n    json: {\n      competitor_id: c.id,\n      business_id: c.business_id,\n      competitor_name: c.name || '',\n      competitor_url: c.url || '',\n      page_urls: pageUrls,\n      business_name: business.name || '',\n      business_city: business.city || '',\n      business_offerings: business.offerings || '',\n      apify_input: buildApifyInput(pageUrls)\n    },\n    pairedItem: { item: i }\n  });\n}\nreturn out;\n"
+      },
+      "id": "Build Apify Actor Input",
+      "name": "Build Apify Actor Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -100,
+        40
+      ],
+      "notes": "SWAPPABLE: the only node that knows the actor input shape. Mirrors apify/website-content-crawler-input.json."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~website-content-crawler/run-sync-get-dataset-items",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <<APIFY_TOKEN>>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 310000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.apify_input) }}"
+      },
+      "id": "Apify: Crawl Competitor Pages",
+      "name": "Apify: Crawl Competitor Pages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        140,
+        40
+      ],
+      "onError": "continueErrorOutput",
+      "notes": "run-sync-get-dataset-items returns the dataset array directly, so there is no run polling. Timeout is 310s, just past Apify's own 300s cutoff (which returns 408). Full-response mode keeps one item per competitor instead of splitting the array across items."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Resolve the matching item from an upstream node. itemMatching() follows n8n's\n// paired-item chain, which is correct even when a branch filtered items out; the\n// index fallback keeps the demo alive if the chain is ever broken.\nfunction ctx(nodeName, i) {\n  const n = $(nodeName);\n  try {\n    const m = n.itemMatching(i);\n    if (m && m.json) return m.json;\n  } catch (e) {}\n  const all = n.all();\n  return ((all[i] || all[0]) || { json: {} }).json;\n}\n\n// Deterministic hash implemented inline on purpose: the Code node sandbox can\n// block require('crypto'), so this workflow depends on no modules at all.\n// Two independent 32-bit mixers concatenated into 16 hex chars.\nfunction contentHash(str) {\n  const s = String(str);\n  let h1 = 0x811c9dc5;\n  let h2 = 0x1b873593;\n  for (let i = 0; i < s.length; i++) {\n    const c = s.charCodeAt(i);\n    h1 = (h1 ^ c) >>> 0;\n    h1 = Math.imul(h1, 0x01000193) >>> 0;\n    h2 = (h2 + c) >>> 0;\n    h2 = Math.imul(h2, 0x85ebca6b) >>> 0;\n    h2 = (h2 ^ (h2 >>> 13)) >>> 0;\n  }\n  const a = ('00000000' + (h1 >>> 0).toString(16)).slice(-8);\n  const b = ('00000000' + (h2 >>> 0).toString(16)).slice(-8);\n  return a + b;\n}\n\nfunction extractPrices(text) {\n  const found = String(text).match(/(?:US\\$|USD\\s?|\\$)\\s?\\d{1,4}(?:,\\d{3})*(?:\\.\\d{1,2})?/g) || [];\n  const seen = [];\n  for (let i = 0; i < found.length; i++) {\n    const p = found[i].replace(/\\s+/g, '');\n    if (seen.indexOf(p) === -1) seen.push(p);\n    if (seen.length >= 80) break;\n  }\n  return seen;\n}\n\nfunction extractItems(text) {\n  const lines = String(text).split('\\n');\n  const found = [];\n  for (let i = 0; i < lines.length; i++) {\n    const line = lines[i].replace(/^[\\s>*#|-]+/, '').trim();\n    if (line.length < 3 || line.length > 200) continue;\n    if (!/\\$\\s?\\d/.test(line)) continue;\n    if (found.indexOf(line) === -1) found.push(line);\n    if (found.length >= 60) break;\n  }\n  return found;\n}\n\nconst out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const c = ctx('Build Apify Actor Input', i);\n  const raw = items[i].json || {};\n\n  // The node runs with \"Include Response Headers and Status\" on, so the actor's\n  // dataset array arrives under .body instead of being split across items.\n  let dataset = raw.body !== undefined ? raw.body : raw;\n  if (!Array.isArray(dataset)) {\n    if (dataset && Array.isArray(dataset.items)) dataset = dataset.items;\n    else if (dataset && typeof dataset === 'object') dataset = [dataset];\n    else dataset = [];\n  }\n\n  let pages = dataset\n    .map(function (p) {\n      p = p || {};\n      const md = p.markdown || p.text || p.content || '';\n      return {\n        url: String(p.url || p.loadedUrl || p.requestUrl || ''),\n        markdown: String(md).replace(/\\r\\n/g, '\\n').replace(/[ \\t]+\\n/g, '\\n').trim()\n      };\n    })\n    .filter(function (p) { return p.url !== '' || p.markdown !== ''; });\n\n  // Sort by URL so the hash never depends on the order Apify happened to finish in.\n  pages.sort(function (a, b) { return a.url < b.url ? -1 : (a.url > b.url ? 1 : 0); });\n  pages = pages.map(function (p) {\n    return { url: p.url, markdown: p.markdown, hash: contentHash(p.url + '\\n' + p.markdown) };\n  });\n\n  const combined = pages\n    .map(function (p) { return '### ' + p.url + '\\n\\n' + p.markdown; })\n    .join('\\n\\n---\\n\\n');\n\n  out.push({\n    json: {\n      competitor_id: c.competitor_id,\n      business_id: c.business_id,\n      competitor_name: c.competitor_name,\n      competitor_url: c.competitor_url,\n      business_name: c.business_name,\n      business_city: c.business_city,\n      business_offerings: c.business_offerings,\n      page_count: pages.length,\n      pages: pages,\n      current_content: combined,\n      content_hash: contentHash(combined),\n      structured: {\n        prices: extractPrices(combined),\n        items: extractItems(combined),\n        hours: null\n      }\n    },\n    pairedItem: { item: i }\n  });\n}\nreturn out;\n"
+      },
+      "id": "Normalize Crawl Output",
+      "name": "Normalize Crawl Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        380,
+        40
+      ],
+      "notes": "Sorts pages by URL, concatenates markdown, computes a module-free deterministic hash, and pulls price tokens for snapshots.structured."
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=<<SUPABASE_URL>>/rest/v1/snapshots?competitor_id=eq.{{ $json.competitor_id }}&select=id,content_hash,pages,captured_at&order=captured_at.desc&limit=1",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "Fetch Previous Snapshot",
+      "name": "Fetch Previous Snapshot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        40
+      ],
+      "notes": "Full-response mode on purpose: an empty PostgREST array would otherwise produce zero items and silently kill the first-ever scan of a competitor."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Resolve the matching item from an upstream node. itemMatching() follows n8n's\n// paired-item chain, which is correct even when a branch filtered items out; the\n// index fallback keeps the demo alive if the chain is ever broken.\nfunction ctx(nodeName, i) {\n  const n = $(nodeName);\n  try {\n    const m = n.itemMatching(i);\n    if (m && m.json) return m.json;\n  } catch (e) {}\n  const all = n.all();\n  return ((all[i] || all[0]) || { json: {} }).json;\n}\n\nfunction pagesToText(pages) {\n  if (!Array.isArray(pages)) return '';\n  return pages\n    .map(function (p) {\n      p = p || {};\n      return '### ' + String(p.url || '') + '\\n\\n' + String(p.markdown || '');\n    })\n    .join('\\n\\n---\\n\\n');\n}\n\nconst out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const body = (items[i].json || {}).body;\n  const rows = Array.isArray(body) ? body : [];\n  const prev = rows.length > 0 ? rows[0] : null;\n  const n = ctx('Normalize Crawl Output', i);\n\n  let branch;\n  if (!prev) branch = 'baseline';\n  else if (String(prev.content_hash) === String(n.content_hash)) branch = 'unchanged';\n  else branch = 'change';\n\n  out.push({\n    json: Object.assign({}, n, {\n      branch: branch,\n      previous_snapshot_id: prev ? prev.id : null,\n      previous_captured_at: prev ? prev.captured_at : null,\n      previous_content: prev ? pagesToText(prev.pages) : ''\n    }),\n    pairedItem: { item: i }\n  });\n}\nreturn out;\n"
+      },
+      "id": "Classify Scan Branch",
+      "name": "Classify Scan Branch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        40
+      ],
+      "notes": "Sets branch = baseline | unchanged | change and rebuilds the previous snapshot's text for the diff prompt."
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rule-baseline",
+                    "leftValue": "={{ $json.branch }}",
+                    "rightValue": "baseline",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "baseline"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rule-unchanged",
+                    "leftValue": "={{ $json.branch }}",
+                    "rightValue": "unchanged",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unchanged"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rule-change",
+                    "leftValue": "={{ $json.branch }}",
+                    "rightValue": "change",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "change"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Route: Baseline / Unchanged / Change",
+      "name": "Route: Baseline / Unchanged / Change",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1100,
+        40
+      ],
+      "notes": "0 baseline -> LLM baseline template. 1 unchanged -> early exit, no LLM call and no snapshot insert. 2 change -> LLM change template."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prompt text is mirrored from n8n/prompt.md, which is the source of truth.\nconst SYSTEM_PROMPT = `You are a competitive analyst advising the owner of a single independent restaurant. This\nowner has very little time and very little money. They will read your output on their phone\nbetween shifts and act on it themselves. Write for that person.\n\nRULES\n\n1. Every signal must be specific and actionable within the next seven days. If the owner\n   cannot do something about it this week, it is not a signal.\n2. Cite actual numbers from the crawled content: prices, portion sizes, day-parts, hours,\n   deal terms. A signal without a number is almost never worth sending.\n3. BANNED output. Never write a signal that amounts to any of these:\n   - \"They updated their menu.\"\n   - \"Consider reviewing your pricing.\"\n   - \"Monitor the competition.\"\n   - \"Their offering has changed.\"\n   Anything this vague must be dropped instead of padded out.\n4. Relevance to THIS owner is the entire value. Compare every observation against the owner's\n   own offerings and price points, which are given to you. If a competitor fact does not\n   touch something the owner sells, at a price the owner charges, in a day-part the owner\n   trades in, leave it out.\n5. The \"evidence\" field must be a verbatim quote copied character for character from the\n   crawled content you were given. Never paraphrase it. Never invent a price, a dish, an\n   hour, or a promotion that is not present in the source text. If you cannot quote it, you\n   cannot claim it.\n6. The \"recommended_action\" field must name a concrete move with a number in it: a price, a bundle, a\n   day-part, a portion. \"Test a $11.95 weekday lunch bundle Tue-Thu\" is a recommendation.\n   \"Reassess your lunch strategy\" is not.\n\nOUTPUT FORMAT\n\nReturn JSON only. No prose before or after, no markdown code fences. Return a single object\nwith exactly one key, \"signals\", whose value is an array of signal objects.\n\nEach signal object has exactly these eight fields, all strings:\n\n  signal_type         one of: baseline, change\n  category            one of: pricing, promotion, menu_product, hours, reputation, positioning\n  impact              one of: high, medium, low\n  title               under 70 characters, leads with the concrete fact\n  what_changed        what the competitor is doing now, with numbers\n  why_it_matters      the consequence for THIS owner, referencing their own offering/price\n  recommended_action  one specific move the owner can make this week, with a number\n  evidence            a verbatim quote from the crawled content\n\nThe enum values above are exact. Lowercase, underscores as shown. Any other value is invalid\nand the signal will be discarded.\n\nReturn at most 3 signals, ordered by impact: all high first, then medium, then low. Fewer\ngood signals beat three padded ones. Two sharp signals is a better answer than three where\nthe third is filler.`;\n\nconst MODEL = 'gpt-4o-mini';\n\nfunction clip(value, max) {\n  const s = String(value === null || value === undefined ? '' : value);\n  return s.length > max ? s.slice(0, max) + '\\n\\n[...truncated]' : s;\n}\n\nconst out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const d = items[i].json || {};\n\n  const userPrompt = [\n    'This is the FIRST scan of this competitor, so there is nothing to diff against. Your job is to',\n    \"describe where this competitor stands today and how that overlaps or contrasts with the\",\n    \"owner's business.\",\n    '',\n    \"THE OWNER'S BUSINESS\",\n    'Name: ' + (d.business_name || 'Unknown'),\n    'City: ' + (d.business_city || 'Unknown'),\n    'What they sell and at what price:',\n    d.business_offerings || '(not provided)',\n    '',\n    'THE COMPETITOR',\n    'Name: ' + (d.competitor_name || 'Unknown'),\n    'Website: ' + (d.competitor_url || 'Unknown'),\n    '',\n    'COMPETITOR PAGE CONTENT (crawled just now)',\n    '---',\n    clip(d.current_content, 12000),\n    '---',\n    '',\n    'Produce 2 or 3 signals, every one with \"signal_type\": \"baseline\".',\n    '',\n    'Prioritise, in this order:',\n    '1. Direct price collisions - a competitor dish that is the same thing the owner sells, at a',\n    '   different price. Name both prices.',\n    '2. Live promotions and deals the owner is not running.',\n    '3. Menu or positioning gaps that the owner either already covers or is exposed on.',\n    '',\n    'Anchor every signal to a specific price or item from the offerings above. Quote the',\n    \"competitor's own words in evidence. Return the JSON object described in the system prompt\",\n    'and nothing else.'\n  ].join('\\n');\n\n  out.push({\n    json: Object.assign({}, d, {\n      openai_request: {\n        model: MODEL,\n        temperature: 0.2,\n        response_format: { type: 'json_object' },\n        messages: [\n          { role: 'system', content: SYSTEM_PROMPT },\n          { role: 'user', content: userPrompt }\n        ]\n      }\n    }),\n    pairedItem: { item: i }\n  });\n}\nreturn out;\n"
+      },
+      "id": "Build Baseline Prompt",
+      "name": "Build Baseline Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        -180
+      ],
+      "notes": "Baseline template from n8n/prompt.md."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prompt text is mirrored from n8n/prompt.md, which is the source of truth.\nconst SYSTEM_PROMPT = `You are a competitive analyst advising the owner of a single independent restaurant. This\nowner has very little time and very little money. They will read your output on their phone\nbetween shifts and act on it themselves. Write for that person.\n\nRULES\n\n1. Every signal must be specific and actionable within the next seven days. If the owner\n   cannot do something about it this week, it is not a signal.\n2. Cite actual numbers from the crawled content: prices, portion sizes, day-parts, hours,\n   deal terms. A signal without a number is almost never worth sending.\n3. BANNED output. Never write a signal that amounts to any of these:\n   - \"They updated their menu.\"\n   - \"Consider reviewing your pricing.\"\n   - \"Monitor the competition.\"\n   - \"Their offering has changed.\"\n   Anything this vague must be dropped instead of padded out.\n4. Relevance to THIS owner is the entire value. Compare every observation against the owner's\n   own offerings and price points, which are given to you. If a competitor fact does not\n   touch something the owner sells, at a price the owner charges, in a day-part the owner\n   trades in, leave it out.\n5. The \"evidence\" field must be a verbatim quote copied character for character from the\n   crawled content you were given. Never paraphrase it. Never invent a price, a dish, an\n   hour, or a promotion that is not present in the source text. If you cannot quote it, you\n   cannot claim it.\n6. The \"recommended_action\" field must name a concrete move with a number in it: a price, a bundle, a\n   day-part, a portion. \"Test a $11.95 weekday lunch bundle Tue-Thu\" is a recommendation.\n   \"Reassess your lunch strategy\" is not.\n\nOUTPUT FORMAT\n\nReturn JSON only. No prose before or after, no markdown code fences. Return a single object\nwith exactly one key, \"signals\", whose value is an array of signal objects.\n\nEach signal object has exactly these eight fields, all strings:\n\n  signal_type         one of: baseline, change\n  category            one of: pricing, promotion, menu_product, hours, reputation, positioning\n  impact              one of: high, medium, low\n  title               under 70 characters, leads with the concrete fact\n  what_changed        what the competitor is doing now, with numbers\n  why_it_matters      the consequence for THIS owner, referencing their own offering/price\n  recommended_action  one specific move the owner can make this week, with a number\n  evidence            a verbatim quote from the crawled content\n\nThe enum values above are exact. Lowercase, underscores as shown. Any other value is invalid\nand the signal will be discarded.\n\nReturn at most 3 signals, ordered by impact: all high first, then medium, then low. Fewer\ngood signals beat three padded ones. Two sharp signals is a better answer than three where\nthe third is filler.`;\n\nconst MODEL = 'gpt-4o-mini';\n\nfunction clip(value, max) {\n  const s = String(value === null || value === undefined ? '' : value);\n  return s.length > max ? s.slice(0, max) + '\\n\\n[...truncated]' : s;\n}\n\nconst FEW_SHOT = [\n  'EXAMPLE OF THE TARGET QUALITY',\n  '',\n  '{\"signals\": [',\n  '  {',\n  '    \"signal_type\": \"change\",',\n  '    \"category\": \"promotion\",',\n  '    \"impact\": \"high\",',\n  '    \"title\": \"New $15 lunch special undercuts your weekday lunch plate\",',\n  '    \"what_changed\": \"The lunch section is new since the last scan. It advertises a $15 Lunch Special served Monday to Friday, 11am to 3pm, including an entree, rice and a drink. The previous version of the page had no lunch pricing at all.\",',\n  '    \"why_it_matters\": \"Your weekday lunch plate is $12.95 and does not include a drink. Their $15 bundle reads as better value to a walk-in comparing the two boards, and it targets exactly the 11am-3pm window you depend on.\",',\n  '    \"recommended_action\": \"Test a $11.95 weekday lunch bundle Tue-Thu that adds a fountain drink to your existing plate, and put the price on the sidewalk board so the comparison happens before they walk past.\",',\n  '    \"evidence\": \"$15 Lunch Special - Mon-Fri 11am-3pm. Includes entree, rice and a drink.\"',\n  '  }',\n  ']}'\n].join('\\n');\n\nconst out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const d = items[i].json || {};\n\n  const userPrompt = [\n    'This competitor has been scanned before and the page content hash has changed. Your job is to',\n    'report ONLY genuine commercial changes between the previous content and the new content.',\n    '',\n    \"THE OWNER'S BUSINESS\",\n    'Name: ' + (d.business_name || 'Unknown'),\n    'City: ' + (d.business_city || 'Unknown'),\n    'What they sell and at what price:',\n    d.business_offerings || '(not provided)',\n    '',\n    'THE COMPETITOR',\n    'Name: ' + (d.competitor_name || 'Unknown'),\n    'Website: ' + (d.competitor_url || 'Unknown'),\n    '',\n    'PREVIOUS CONTENT (last snapshot)',\n    '---',\n    clip(d.previous_content, 8000),\n    '---',\n    '',\n    'NEW CONTENT (crawled just now)',\n    '---',\n    clip(d.current_content, 12000),\n    '---',\n    '',\n    'IGNORE THIS NOISE. A hash change does not mean a real change. Do not report any of the',\n    'following, and do not mention them at all:',\n    '- navigation, menus of links, breadcrumbs, headers, footers',\n    '- copyright years, \"last updated\" dates, build or version strings',\n    '- whitespace, line breaks, punctuation, capitalisation, spelling fixes',\n    '- reordering of items with no change to what is offered or what it costs',\n    '- cookie banners, privacy notices, consent text, newsletter signup boxes',\n    '- social media links, phone/address formatting, image filenames, tracking parameters',\n    '',\n    'REPORT ONLY commercially meaningful movement: prices up or down, dishes added or removed,',\n    'new or expired promotions and specials, changed service hours or day-parts, new locations or',\n    'delivery/catering options, changed positioning claims.',\n    '',\n    'IF NOTHING COMMERCIALLY MEANINGFUL CHANGED, RETURN {\"signals\": []}. An empty array is a',\n    'correct, valuable and expected answer. It tells the owner the competitor is holding steady,',\n    'which is real information. Never manufacture a signal to avoid returning an empty array.',\n    '',\n    'Every signal you do return must use \"signal_type\": \"change\", must state both the old and the',\n    \"new value where a value moved, and must connect it to the owner's own prices above.\",\n    '',\n    FEW_SHOT,\n    '',\n    'Return the JSON object described in the system prompt and nothing else.'\n  ].join('\\n');\n\n  out.push({\n    json: Object.assign({}, d, {\n      openai_request: {\n        model: MODEL,\n        temperature: 0.2,\n        response_format: { type: 'json_object' },\n        messages: [\n          { role: 'system', content: SYSTEM_PROMPT },\n          { role: 'user', content: userPrompt }\n        ]\n      }\n    }),\n    pairedItem: { item: i }\n  });\n}\nreturn out;\n"
+      },
+      "id": "Build Change Prompt",
+      "name": "Build Change Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        260
+      ],
+      "notes": "Change template from n8n/prompt.md, including the noise-ignore list and the few-shot example."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <<OPENAI_API_KEY>>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.openai_request) }}"
+      },
+      "id": "OpenAI: Generate Signals",
+      "name": "OpenAI: Generate Signals",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1580,
+        40
+      ],
+      "onError": "continueErrorOutput",
+      "notes": "Both prompt branches converge on this single node. Plain HTTP rather than the OpenAI node: no credential type to configure and it imports on every n8n version."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Resolve the matching item from an upstream node. itemMatching() follows n8n's\n// paired-item chain, which is correct even when a branch filtered items out; the\n// index fallback keeps the demo alive if the chain is ever broken.\nfunction ctx(nodeName, i) {\n  const n = $(nodeName);\n  try {\n    const m = n.itemMatching(i);\n    if (m && m.json) return m.json;\n  } catch (e) {}\n  const all = n.all();\n  return ((all[i] || all[0]) || { json: {} }).json;\n}\n\n// ===========================================================================\n// The guardrail between a hallucinating model and a 400 from Postgres.\n// Every value below is copied character for character from supabase/schema.sql.\n// ===========================================================================\nconst ALLOWED_SIGNAL_TYPE = ['baseline', 'change'];\nconst ALLOWED_CATEGORY = ['pricing', 'promotion', 'menu_product', 'hours', 'reputation', 'positioning'];\nconst ALLOWED_IMPACT = ['high', 'medium', 'low'];\nconst REQUIRED_TEXT = ['title', 'what_changed', 'why_it_matters', 'recommended_action', 'evidence'];\nconst IMPACT_ORDER = { high: 0, medium: 1, low: 2 };\nconst MAX_SIGNALS = 3;\n\nfunction parseLoose(text) {\n  if (text === null || text === undefined) return null;\n  let t = String(text).trim();\n  t = t.replace(/^```[a-zA-Z]*\\s*/, '').replace(/```\\s*$/, '').trim();\n  try { return JSON.parse(t); } catch (e) {}\n  const candidates = [t.indexOf('{'), t.indexOf('[')].filter(function (x) { return x >= 0; });\n  if (candidates.length === 0) return null;\n  const start = Math.min.apply(null, candidates);\n  const end = t.lastIndexOf(t.charAt(start) === '{' ? '}' : ']');\n  if (end <= start) return null;\n  try { return JSON.parse(t.slice(start, end + 1)); } catch (e) {}\n  return null;\n}\n\nfunction toArray(parsed) {\n  if (Array.isArray(parsed)) return parsed;\n  if (parsed && typeof parsed === 'object') {\n    const keys = ['signals', 'data', 'results', 'items', 'output'];\n    for (let i = 0; i < keys.length; i++) {\n      if (Array.isArray(parsed[keys[i]])) return parsed[keys[i]];\n    }\n    if (parsed.title || parsed.what_changed) return [parsed];\n  }\n  return [];\n}\n\nfunction clean(v) {\n  if (v === null || v === undefined) return '';\n  return (typeof v === 'string' ? v : String(v)).trim();\n}\n\nfunction enumOf(v) {\n  return clean(v).toLowerCase().replace(/[\\s-]+/g, '_');\n}\n\nconst out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const d = ctx('Classify Scan Branch', i);\n  const expectedType = d.branch === 'baseline' ? 'baseline' : 'change';\n\n  const resp = items[i].json || {};\n  let content = '';\n  try { content = resp.choices[0].message.content; } catch (e) { content = ''; }\n\n  const raw = toArray(parseLoose(content));\n  const kept = [];\n  const dropped = [];\n\n  for (let k = 0; k < raw.length; k++) {\n    const s = raw[k] || {};\n    const declaredType = enumOf(s.signal_type);\n    const category = enumOf(s.category);\n    const impact = enumOf(s.impact);\n\n    if (declaredType !== '' && ALLOWED_SIGNAL_TYPE.indexOf(declaredType) === -1) {\n      dropped.push('signal_type not in enum: ' + declaredType);\n      continue;\n    }\n    if (ALLOWED_CATEGORY.indexOf(category) === -1) {\n      dropped.push('category not in enum: ' + category);\n      continue;\n    }\n    if (ALLOWED_IMPACT.indexOf(impact) === -1) {\n      dropped.push('impact not in enum: ' + impact);\n      continue;\n    }\n\n    const text = {};\n    let missing = '';\n    for (let f = 0; f < REQUIRED_TEXT.length; f++) {\n      const field = REQUIRED_TEXT[f];\n      const val = clean(s[field]);\n      if (val === '') { missing = field; break; }\n      text[field] = val;\n    }\n    if (missing !== '') {\n      dropped.push('empty required field: ' + missing);\n      continue;\n    }\n\n    kept.push({\n      // The branch decides signal_type, never the model.\n      signal_type: expectedType,\n      category: category,\n      impact: impact,\n      title: text.title.slice(0, 300),\n      what_changed: text.what_changed,\n      why_it_matters: text.why_it_matters,\n      recommended_action: text.recommended_action,\n      evidence: text.evidence.slice(0, 2000)\n    });\n  }\n\n  kept.sort(function (a, b) { return IMPACT_ORDER[a.impact] - IMPACT_ORDER[b.impact]; });\n  const signals = kept.slice(0, MAX_SIGNALS);\n\n  out.push({\n    json: {\n      competitor_id: d.competitor_id,\n      business_id: d.business_id,\n      branch: d.branch,\n      content_hash: d.content_hash,\n      pages: d.pages,\n      structured: d.structured,\n      signal_count: signals.length,\n      signals: signals,\n      dropped_count: dropped.length,\n      dropped_reasons: dropped.slice(0, 10)\n    },\n    pairedItem: { item: i }\n  });\n}\nreturn out;\n"
+      },
+      "id": "Validate Signals",
+      "name": "Validate Signals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1820,
+        40
+      ],
+      "notes": "Runs BEFORE any write. Drops signals with an out-of-enum signal_type, category or impact, drops signals missing any of the five required text fields, and caps at 3 ordered by impact."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=<<SUPABASE_URL>>/rest/v1/snapshots",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ competitor_id: $json.competitor_id, content_hash: $json.content_hash, pages: $json.pages, structured: $json.structured }) }}"
+      },
+      "id": "Insert Snapshot",
+      "name": "Insert Snapshot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2060,
+        40
+      ],
+      "notes": "captured_at defaults to now() in Postgres. return=representation hands the new snapshot id to the signal rows."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Resolve the matching item from an upstream node. itemMatching() follows n8n's\n// paired-item chain, which is correct even when a branch filtered items out; the\n// index fallback keeps the demo alive if the chain is ever broken.\nfunction ctx(nodeName, i) {\n  const n = $(nodeName);\n  try {\n    const m = n.itemMatching(i);\n    if (m && m.json) return m.json;\n  } catch (e) {}\n  const all = n.all();\n  return ((all[i] || all[0]) || { json: {} }).json;\n}\n\nconst out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const snapshot = items[i].json || {};\n  const v = ctx('Validate Signals', i);\n  const snapshotId = snapshot.id || null;\n\n  const rows = (Array.isArray(v.signals) ? v.signals : []).map(function (s) {\n    return {\n      business_id: v.business_id,\n      competitor_id: v.competitor_id,\n      snapshot_id: snapshotId,\n      signal_type: s.signal_type,\n      category: s.category,\n      impact: s.impact,\n      title: s.title,\n      what_changed: s.what_changed,\n      why_it_matters: s.why_it_matters,\n      recommended_action: s.recommended_action,\n      evidence: s.evidence\n    };\n  });\n\n  out.push({\n    json: {\n      competitor_id: v.competitor_id,\n      business_id: v.business_id,\n      snapshot_id: snapshotId,\n      signal_count: rows.length,\n      signal_rows: rows\n    },\n    pairedItem: { item: i }\n  });\n}\nreturn out;\n"
+      },
+      "id": "Build Signal Rows",
+      "name": "Build Signal Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2300,
+        40
+      ],
+      "notes": "Stamps business_id, competitor_id and the new snapshot_id onto each validated signal."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-signals",
+              "leftValue": "={{ $json.signal_count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "Any Signals to Insert?",
+      "name": "Any Signals to Insert?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2540,
+        40
+      ],
+      "notes": "\"No commercially meaningful change\" is a valid LLM answer, and POSTing an empty array to PostgREST is not. This guard is what makes an empty result a clean success."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=<<SUPABASE_URL>>/rest/v1/signals",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.signal_rows) }}"
+      },
+      "id": "Insert Signals",
+      "name": "Insert Signals",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2780,
+        -80
+      ],
+      "notes": "One bulk request: PostgREST inserts a JSON array of rows in a single statement."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Every terminating path converges here: unchanged early-exit, signals inserted,\n// and no-signals. Collapses to one item per competitor so the final PATCH runs once.\nconst seen = {};\nconst out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const j = items[i].json || {};\n  const id = j.competitor_id || j.id;\n  if (!id || seen[id]) continue;\n  seen[id] = true;\n  out.push({\n    json: {\n      competitor_id: id,\n      branch: j.branch || null,\n      signal_count: j.signal_count === undefined ? null : j.signal_count\n    },\n    pairedItem: { item: i }\n  });\n}\nreturn out;\n"
+      },
+      "id": "Finish Scan",
+      "name": "Finish Scan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3020,
+        40
+      ],
+      "notes": "Convergence point for the unchanged early exit, the signals-inserted path and the no-signals path."
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=<<SUPABASE_URL>>/rest/v1/competitors?id=eq.{{ $json.competitor_id }}",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'active', last_checked_at: new Date().toISOString(), last_error: null }) }}"
+      },
+      "id": "Mark Competitor Active",
+      "name": "Mark Competitor Active",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3260,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=<<SUPABASE_URL>>/rest/v1/competitors?id=eq.{{ $json.competitor_id || $('Build Apify Actor Input').first().json.competitor_id }}",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'error', last_checked_at: new Date().toISOString(), last_error: String($json.error && $json.error.message ? $json.error.message : ($json.error || $json.message || 'Apify or OpenAI call failed')).slice(0, 500) }) }}"
+      },
+      "id": "Mark Competitor Error",
+      "name": "Mark Competitor Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1580,
+        620
+      ],
+      "notes": "Single shared error sink, wired from the error output of the Apify and OpenAI nodes."
+    }
+  ],
+  "connections": {
+    "Webhook: Add Competitor": {
+      "main": [
+        [
+          {
+            "node": "Insert Competitor (scanning)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Competitor (scanning)": {
+      "main": [
+        [
+          {
+            "node": "Load Competitor + Business",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Rescan": {
+      "main": [
+        [
+          {
+            "node": "Mark Competitor Scanning",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Competitor Scanning": {
+      "main": [
+        [
+          {
+            "node": "Load Competitor + Business",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule: Every 6 Hours": {
+      "main": [
+        [
+          {
+            "node": "Fetch Active Competitors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Active Competitors": {
+      "main": [
+        [
+          {
+            "node": "Load Competitor + Business",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Competitor + Business": {
+      "main": [
+        [
+          {
+            "node": "Build Apify Actor Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Apify Actor Input": {
+      "main": [
+        [
+          {
+            "node": "Apify: Crawl Competitor Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Crawl Competitor Pages": {
+      "main": [
+        [
+          {
+            "node": "Normalize Crawl Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Competitor Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Crawl Output": {
+      "main": [
+        [
+          {
+            "node": "Fetch Previous Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Previous Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Classify Scan Branch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Scan Branch": {
+      "main": [
+        [
+          {
+            "node": "Route: Baseline / Unchanged / Change",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: Baseline / Unchanged / Change": {
+      "main": [
+        [
+          {
+            "node": "Build Baseline Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finish Scan",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Change Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Baseline Prompt": {
+      "main": [
+        [
+          {
+            "node": "OpenAI: Generate Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Change Prompt": {
+      "main": [
+        [
+          {
+            "node": "OpenAI: Generate Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI: Generate Signals": {
+      "main": [
+        [
+          {
+            "node": "Validate Signals",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Competitor Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Signals": {
+      "main": [
+        [
+          {
+            "node": "Insert Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Build Signal Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Signal Rows": {
+      "main": [
+        [
+          {
+            "node": "Any Signals to Insert?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Signals to Insert?": {
+      "main": [
+        [
+          {
+            "node": "Insert Signals",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finish Scan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Signals": {
+      "main": [
+        [
+          {
+            "node": "Finish Scan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finish Scan": {
+      "main": [
+        [
+          {
+            "node": "Mark Competitor Active",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "pinData": {},
+  "tags": []
+}

@@ -1,6 +1,6 @@
 # n8n contract
 
-n8n owns every database write and uses the Supabase **service_role** key. The workflow JSON is not in this repo yet; this is the contract it must satisfy.
+n8n owns every database write and uses the Supabase **service_role** key. Import `n8n/workflow.json` into n8n; this document is the contract that workflow satisfies.
 
 ## Triggers
 

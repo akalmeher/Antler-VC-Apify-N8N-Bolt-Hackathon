@@ -48,7 +48,7 @@ create table if not exists signals (
   category text not null,
   impact text not null,
   title text not null,
-  what_changed text not null,
+  finding text not null,
   why_it_matters text not null,
   recommended_action text not null,
   evidence text, -- quoted snippet from the crawled page

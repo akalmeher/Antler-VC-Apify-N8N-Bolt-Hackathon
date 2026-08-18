@@ -88,7 +88,7 @@ Each signal object has exactly these eight fields, all strings:
   category            one of: pricing, promotion, menu_product, hours, reputation, positioning
   impact              one of: high, medium, low
   title               under 70 characters, leads with the concrete fact
-  what_changed        what the competitor is doing now, with numbers
+  finding             what the competitor is doing now, with numbers
   why_it_matters      the consequence for THIS owner, referencing their own offering/price
   recommended_action  one specific move the owner can make this week, with a number
   evidence            a verbatim quote from the crawled content
@@ -204,7 +204,7 @@ EXAMPLE OF THE TARGET QUALITY
     "category": "promotion",
     "impact": "high",
     "title": "New $15 lunch special undercuts your weekday lunch plate",
-    "what_changed": "The lunch section is new since the last scan. It advertises a $15 Lunch Special served Monday to Friday, 11am to 3pm, including an entree, rice and a drink. The previous version of the page had no lunch pricing at all.",
+    "finding": "The lunch section is new since the last scan. It advertises a $15 Lunch Special served Monday to Friday, 11am to 3pm, including an entree, rice and a drink. The previous version of the page had no lunch pricing at all.",
     "why_it_matters": "Your weekday lunch plate is $12.95 and does not include a drink. Their $15 bundle reads as better value to a walk-in comparing the two boards, and it targets exactly the 11am-3pm window you depend on.",
     "recommended_action": "Test a $11.95 weekday lunch bundle Tue-Thu that adds a fountain drink to your existing plate, and put the price on the sidewalk board so the comparison happens before they walk past.",
     "evidence": "$15 Lunch Special - Mon-Fri 11am-3pm. Includes entree, rice and a drink."

@@ -38,7 +38,7 @@ businesses: id (uuid), name (text), category (text), city (text, nullable), offe
 
 competitors: id (uuid), business_id (uuid), name (text), url (text), page_urls (text array, 1 to 3 entries), status (text), last_checked_at (timestamptz, nullable), last_error (text, nullable), created_at (timestamptz)
 
-signals: id (uuid), business_id (uuid), competitor_id (uuid), snapshot_id (uuid, nullable), signal_type (text), category (text), impact (text), title (text), what_changed (text), why_it_matters (text), recommended_action (text), evidence (text, nullable), is_read (boolean), created_at (timestamptz)
+signals: id (uuid), business_id (uuid), competitor_id (uuid), snapshot_id (uuid, nullable), signal_type (text), category (text), impact (text), title (text), finding (text), why_it_matters (text), recommended_action (text), evidence (text, nullable), is_read (boolean), created_at (timestamptz)
 
 === ENUM VALUES (database CHECK constraints — reproduce these strings literally in every badge, map, and filter) ===
 
@@ -88,7 +88,7 @@ Query signals where business_id equals VITE_BUSINESS_ID, ordered by created_at d
 Each card contains, in this order:
 - Header row: competitor name, a signal_type badge ('baseline' vs 'change' — visually distinct), an impact badge ('high' / 'medium' / 'low' — high should be the loudest, low the quietest), a category label, and relative created_at.
 - title as the card headline, prominent.
-- what_changed under a "What changed" label.
+- finding: if signal_type === "baseline" label it “What we found”; if signal_type === "change" label it “What changed”.
 - why_it_matters under a "Why it matters" label.
 - recommended_action under a "Do this" label. This must be the visually emphasized element of the card — give it a tinted background panel, an accent left border, and stronger type weight than the surrounding text. This is the line the owner acts on, so it should be the thing the eye lands on after the headline.
 - evidence, when it is not null, rendered last as a quoted excerpt in a blockquote with a monospace or serif treatment and a smaller muted type size, prefixed with a "From their page" label. Skip the whole block when evidence is null.

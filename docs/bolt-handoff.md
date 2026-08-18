@@ -60,7 +60,7 @@ Competitor Radar watches a restaurant's competitors and turns changes on their m
 | category | text — `pricing` \| `promotion` \| `menu_product` \| `hours` \| `reputation` \| `positioning` |
 | impact | text — `high` \| `medium` \| `low` |
 | title | text — headline |
-| what_changed | text |
+| finding | text — label as “What we found” when `signal_type` is `baseline`, “What changed” when `signal_type` is `change` |
 | why_it_matters | text |
 | recommended_action | text |
 | evidence | text, nullable — quoted snippet from the competitor's page |
@@ -84,7 +84,7 @@ Competitor Radar watches a restaurant's competitors and turns changes on their m
 **Signals feed**
 
 - `signals` where `business_id` matches, ordered by `created_at` desc.
-- Each card shows: `signal_type` badge, `impact`, `title`, `what_changed`, `why_it_matters`, `recommended_action`, and `evidence` if present. Join `competitors.name` for attribution.
+- Each card shows: `signal_type` badge, `impact`, `title`, `finding`, `why_it_matters`, `recommended_action`, and `evidence` if present. Join `competitors.name` for attribution. Label `finding` as “What we found” when `signal_type === "baseline"` and “What changed” when `signal_type === "change"`.
 
 **Add form**
 

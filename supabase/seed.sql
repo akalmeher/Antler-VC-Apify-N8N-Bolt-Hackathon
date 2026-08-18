@@ -18,16 +18,24 @@ on conflict (id) do nothing;
 --      localhost and file:// will not work because Apify crawls from the cloud.
 
 insert into competitors (business_id, name, url, page_urls)
-values
-  (
-    '11111111-1111-4111-8111-111111111111',
-    'El Chilito',
-    'https://www.elchilito.com/',
-    array['https://www.elchilito.com/menu']
-  ),
-  (
-    '11111111-1111-4111-8111-111111111111',
-    'Media Luna Taqueria',
-    'https://<<YOUR-DEMO-SITE-URL>>/',
-    array['https://<<YOUR-DEMO-SITE-URL>>/']
-  );
+select v.business_id, v.name, v.url, v.page_urls
+from (
+  values
+    (
+      '11111111-1111-4111-8111-111111111111'::uuid,
+      'El Chilito',
+      'https://www.elchilito.com/',
+      array['https://www.elchilito.com/menu']
+    ),
+    (
+      '11111111-1111-4111-8111-111111111111'::uuid,
+      'Media Luna Taqueria',
+      'https://effulgent-semifreddo-401290.netlify.app/',
+      array['https://effulgent-semifreddo-401290.netlify.app/']
+    )
+) as v(business_id, name, url, page_urls)
+where not exists (
+  select 1 from competitors c
+  where c.business_id = v.business_id
+    and c.name = v.name
+);

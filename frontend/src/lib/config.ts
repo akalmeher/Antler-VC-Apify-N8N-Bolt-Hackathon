@@ -4,6 +4,8 @@ export const SUPABASE_URL = read('VITE_SUPABASE_URL');
 export const SUPABASE_ANON_KEY = read('VITE_SUPABASE_ANON_KEY');
 export const N8N_WEBHOOK_BASE_URL = read('VITE_N8N_WEBHOOK_BASE_URL').replace(/\/+$/, '');
 export const BUSINESS_ID = read('VITE_BUSINESS_ID');
+// Optional: the app stays usable without it, so it is not part of missingEnvKeys().
+export const GOOGLE_MAPS_EMBED_API_KEY = read('VITE_GOOGLE_MAPS_EMBED_API_KEY');
 
 export function missingEnvKeys(): string[] {
   const missing: string[] = [];

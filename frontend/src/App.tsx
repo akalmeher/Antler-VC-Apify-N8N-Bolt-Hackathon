@@ -75,7 +75,8 @@ function AppShell() {
     return (
       <Landing
         onEnter={() => setPublicView('register')}
-        onLogin={() => setPublicView('login')}
+        // Demo shortcut: skip the auth flow and open the dashboard directly.
+        onLogin={enterApp}
       />
     );
   }

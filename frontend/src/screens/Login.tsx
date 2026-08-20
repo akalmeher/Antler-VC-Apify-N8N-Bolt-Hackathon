@@ -58,7 +58,7 @@ export function Login({
         Log in
       </h1>
       <p className="animate-text-in mt-3 text-sm leading-relaxed text-muted stagger-text-3">
-        Pick up the watchlist for your restaurant.
+        Pick up the watchlist for your business.
       </p>
 
       <form
@@ -73,7 +73,7 @@ export function Login({
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@restaurant.com"
+            placeholder="you@business.com"
           />
         </div>
         <div>

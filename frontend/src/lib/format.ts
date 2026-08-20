@@ -3,7 +3,7 @@ import type { Category, Impact, SignalType, CompetitorStatus } from '@/lib/types
 export const CATEGORY_LABELS: Record<Category, string> = {
   pricing: 'Pricing',
   promotion: 'Promotion',
-  menu_product: 'Menu & product',
+  menu_product: 'Offering',
   hours: 'Hours',
   reputation: 'Reputation',
   positioning: 'Positioning',

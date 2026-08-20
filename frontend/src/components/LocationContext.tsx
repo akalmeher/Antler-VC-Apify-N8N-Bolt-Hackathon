@@ -52,19 +52,21 @@ export function LocationContext({
         </div>
       </div>
 
-      <div className="hidden h-10 w-px bg-ink-border sm:block" />
+      <div className="relative -left-4 hidden h-10 w-px bg-ink-border sm:block" />
 
       <div className="flex items-start gap-3">
-        <span className="relative -right-4 mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-charcoal-50 text-charcoal">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-charcoal-50 text-charcoal">
           <Radar className="h-4 w-4" />
         </span>
         <div>
-          <p className="relative -right-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
-            Who’s entering your reflection?
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+            Discovery area
           </p>
-          <p className="relative -right-4 mt-0.5 font-semibold tracking-tight text-charcoal">{radius ?? 'Not set'}</p>
-          <p className="relative -right-4 text-sm text-muted">
-            {radius ? 'Nearby discovery radius' : 'Watchlist only — no geo radius yet'}
+          <p className="mt-0.5 font-semibold tracking-tight text-charcoal">
+            {radius ?? 'Not set'}
+          </p>
+          <p className="text-sm text-muted">
+            {radius ? 'Nearby discovery area' : 'Choose a radius when finding competitors'}
           </p>
         </div>
       </div>

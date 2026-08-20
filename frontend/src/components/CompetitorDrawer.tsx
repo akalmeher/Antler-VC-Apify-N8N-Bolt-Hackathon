@@ -162,7 +162,7 @@ export function CompetitorDrawer() {
           )}
 
           {pricingMenu.length > 0 && (
-            <InsightPanel tone="pricing" label="Pricing / menu intelligence" icon={<DollarSign className="h-3.5 w-3.5" />}>
+            <InsightPanel tone="pricing" label="Pricing & offerings" icon={<DollarSign className="h-3.5 w-3.5" />}>
               <div className="space-y-2.5">
                 {pricingMenu.map((s) => (
                   <MiniSignal key={s.id} signal={s} />
@@ -186,7 +186,7 @@ export function CompetitorDrawer() {
           )}
 
           {actions.length > 0 && (
-            <InsightPanel tone="action" label="How to respond" icon={<ListChecks className="h-3.5 w-3.5" />}>
+            <InsightPanel tone="action" label="Your next move" icon={<ListChecks className="h-3.5 w-3.5" />}>
               <div className="space-y-3">
                 {actions.map((s) => (
                   <div key={s.id}>

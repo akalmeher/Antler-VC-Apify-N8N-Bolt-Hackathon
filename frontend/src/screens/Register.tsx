@@ -29,7 +29,7 @@ export function Register({
       return;
     }
     if (!restaurant.trim()) {
-      setError('Enter your restaurant name.');
+      setError('Enter your business name.');
       return;
     }
     if (!isValidEmail(email)) {
@@ -73,7 +73,7 @@ export function Register({
         Create your account
       </h1>
       <p className="animate-text-in mt-3 text-sm leading-relaxed text-muted stagger-text-3">
-        Then add the restaurants you actually compete with.
+        Then add the local businesses you actually compete with.
       </p>
 
       <form
@@ -91,7 +91,7 @@ export function Register({
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-navy-500">Restaurant</label>
+          <label className="mb-1.5 block text-sm font-medium text-navy-500">Business name</label>
           <input
             className={inputClass}
             value={restaurant}
@@ -107,7 +107,7 @@ export function Register({
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@restaurant.com"
+            placeholder="you@business.com"
           />
         </div>
         <div>

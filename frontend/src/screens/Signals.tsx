@@ -86,7 +86,7 @@ function SignalCard({ signal }: { signal: SignalWithCompetitor }) {
             <p className="text-sm leading-relaxed text-charcoal">{signal.why_it_matters}</p>
           </InsightPanel>
 
-          <InsightPanel tone="action" label="Do this">
+          <InsightPanel tone="action" label="Your next move">
             <p className="text-sm font-semibold leading-relaxed text-charcoal">
               {signal.recommended_action}
             </p>
@@ -95,7 +95,7 @@ function SignalCard({ signal }: { signal: SignalWithCompetitor }) {
           {signal.evidence && (
             <InsightPanel
               tone="evidence"
-              label="From their page"
+              label="Evidence"
               icon={<Quote className="h-3.5 w-3.5" />}
             >
               <blockquote className="font-serif text-sm italic leading-relaxed text-muted">
@@ -148,7 +148,7 @@ export function Signals() {
         as="h1"
         eyebrow="Intelligence"
         title="Changes in the reflection"
-        description="The pricing, menu, promotion, and positioning changes worth paying attention to."
+        description="The pricing, offerings, promotions, hours, and positioning changes worth paying attention to."
       />
 
       {hasAnySignals && (
@@ -202,7 +202,7 @@ export function Signals() {
         <EmptyState
           icon={<Zap className="h-6 w-6" />}
           title="No signals yet"
-          description="Once a scan finishes, every price change, new promotion and menu update we find will appear here as a card with a recommended action."
+          description="Once a scan finishes, every price change, new promotion and offering update we find will appear here as a card with a recommended action."
         />
       ) : filtered.length === 0 ? (
         <EmptyState

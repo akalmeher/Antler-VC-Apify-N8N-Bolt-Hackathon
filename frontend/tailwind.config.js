@@ -88,12 +88,17 @@ export default {
           from: { opacity: '0', transform: 'translateY(8px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        'modal-in': {
+          from: { opacity: '0', transform: 'translateY(6px) scale(0.985)' },
+          to: { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
       },
       animation: {
         rise: 'rise 260ms ease-out both',
         fade: 'fade 220ms ease-out both',
         'drawer-in': 'drawer-in 260ms ease-out both',
         'text-in': 'textIn 280ms ease-out both',
+        'modal-in': 'modal-in 220ms ease-out both',
       },
     },
   },

@@ -166,7 +166,7 @@ export function Dashboard() {
         as="h1"
         eyebrow="Overview"
         title="What the mirror sees"
-        description="A live reflection of the competitive moves shaping your market."
+        description="A live reflection of the competitive moves shaping your local market."
       />
 
       <LocationContext business={business} competitorCount={competitorCount} />
@@ -248,7 +248,7 @@ export function Dashboard() {
             body={
               pricing
                 ? pricing.finding
-                : 'Pricing and menu signals appear here once a scan finds a comparable price point.'
+                : 'Pricing and offering signals appear here once a scan finds a comparable price point.'
             }
             meta={
               pricing
@@ -275,7 +275,7 @@ export function Dashboard() {
         <EmptyState
           icon={<Radar className="h-6 w-6" />}
           title="No signals yet"
-          description="Run a scan on a competitor and their pricing and menu changes will show up here."
+          description="Run a scan on a competitor and their pricing and offering changes will show up here."
           action={
             <button
               onClick={() => navigate('competitors')}

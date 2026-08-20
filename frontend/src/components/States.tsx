@@ -5,12 +5,18 @@ export function Skeleton({ className = '' }: { className?: string }) {
   return <div className={`animate-pulse rounded-[10px] bg-charcoal-50 ${className}`} />;
 }
 
-export function ErrorState({ message }: { message: string }) {
+export function ErrorState({
+  title = "We couldn't load this.",
+  message,
+}: {
+  title?: string;
+  message: string;
+}) {
   return (
     <div className="flex items-start gap-3 rounded-[12px] border border-semantic-threatBorder bg-semantic-threatBg p-4 text-sm text-semantic-threat">
       <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-semantic-threat" />
       <div>
-        <p className="font-semibold">We couldn't load this.</p>
+        <p className="font-semibold">{title}</p>
         <p className="mt-1 break-words text-semantic-threat/90">{message}</p>
       </div>
     </div>

@@ -56,3 +56,44 @@ export interface Signal {
 export interface SignalWithCompetitor extends Signal {
   competitors: { name: string } | null;
 }
+
+export interface NearbyOpeningHours {
+  day: string;
+  hours: string;
+}
+
+export interface NearbyCompetitor {
+  name: string;
+  category: string | null;
+  address: string | null;
+  neighborhood: string | null;
+  website: string | null;
+  google_maps_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  distance_miles: number | null;
+  rating: number | null;
+  reviews_count: number;
+  price: string | null;
+  image_url: string | null;
+  opening_hours: NearbyOpeningHours[];
+  place_id: string | null;
+  can_monitor: boolean;
+}
+
+export interface DiscoverNearbyRequest {
+  business_name: string;
+  address: string;
+  radius_miles: number;
+  search_term: string;
+  // Fallback only — the workflow geocodes `address` when these are absent.
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface DiscoverNearbyResponse {
+  business_name: string;
+  radius_miles: number;
+  count: number;
+  competitors: NearbyCompetitor[];
+}

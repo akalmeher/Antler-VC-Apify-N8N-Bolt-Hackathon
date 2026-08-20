@@ -1,6 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import { BUSINESS_ID, N8N_WEBHOOK_BASE_URL } from '@/lib/config';
-import type { Business, Competitor, SignalWithCompetitor } from '@/lib/types';
+import type {
+  Business,
+  Competitor,
+  DiscoverNearbyRequest,
+  DiscoverNearbyResponse,
+  SignalWithCompetitor,
+} from '@/lib/types';
 
 export async function fetchBusiness(): Promise<Business | null> {
   const { data, error } = await supabase
@@ -53,6 +59,22 @@ async function postWebhook(path: string, body: Record<string, unknown>): Promise
   }
 }
 
+async function postWebhookJson<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  const res = await fetch(`${N8N_WEBHOOK_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`The scan service returned an error (${res.status}). Please try again.`);
+  }
+  try {
+    return (await res.json()) as T;
+  } catch {
+    throw new Error('The scan service returned an unreadable response. Please try again.');
+  }
+}
+
 export async function requestAddCompetitor(input: {
   name: string;
   url: string;
@@ -68,4 +90,21 @@ export async function requestAddCompetitor(input: {
 
 export async function requestRescan(competitorId: string): Promise<void> {
   await postWebhook('/webhook/rescan', { competitor_id: competitorId });
+}
+
+export async function discoverNearbyCompetitors(
+  input: DiscoverNearbyRequest,
+): Promise<DiscoverNearbyResponse> {
+  const data = await postWebhookJson<DiscoverNearbyResponse>('/webhook/discover-nearby', {
+    business_name: input.business_name,
+    address: input.address,
+    radius_miles: input.radius_miles,
+    search_term: input.search_term,
+    ...(input.latitude !== undefined ? { latitude: input.latitude } : {}),
+    ...(input.longitude !== undefined ? { longitude: input.longitude } : {}),
+  });
+  return {
+    ...data,
+    competitors: data.competitors ?? [],
+  };
 }

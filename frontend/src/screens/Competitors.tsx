@@ -133,7 +133,7 @@ function CompetitorCard({
       {opportunity && opportunity.id !== change?.id && opportunity.id !== complaint?.id && (
         <div className="mt-3 rounded-xl border border-semantic-opportunityBorder bg-semantic-opportunityBg p-3">
           <p className="text-[11px] font-bold uppercase tracking-wider text-semantic-opportunity">
-            How to respond
+            Your next move
           </p>
           <p className="mt-1 line-clamp-2 text-sm text-navy">{opportunity.recommended_action}</p>
         </div>
@@ -203,7 +203,7 @@ export function Competitors() {
         as="h1"
         eyebrow="Watchlist"
         title="Mirror, mirror, on the wall… who’s making the biggest move of them all?"
-        description="Track the restaurants competing for the same customers, see what they’re changing, and spot the moves that matter most."
+        description="Track the local businesses competing for the same customers, see what they’re changing, and spot the moves that matter most."
       />
 
       <LocationContext business={business} competitorCount={competitors.length} />

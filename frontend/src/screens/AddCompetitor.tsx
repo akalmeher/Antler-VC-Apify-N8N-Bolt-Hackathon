@@ -5,9 +5,17 @@ import { useNav } from '@/lib/nav';
 import { isValidUrl } from '@/lib/format';
 import { ErrorState } from '@/components/States';
 import { SectionHeader } from '@/components/SectionHeader';
+import { NearbyDiscovery } from '@/components/NearbyDiscovery';
 import { inputClass } from '@/lib/forms';
 
-export function AddCompetitor() {
+type AddMode = 'discover' | 'manual';
+
+const MODES: { id: AddMode; label: string }[] = [
+  { id: 'discover', label: 'Discover nearby' },
+  { id: 'manual', label: 'Add manually' },
+];
+
+function ManualCompetitorForm() {
   const { startAddCompetitor } = useRadar();
   const { navigate } = useNav();
 
@@ -53,22 +61,17 @@ export function AddCompetitor() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
-      <SectionHeader
-        as="h1"
-        eyebrow="Watchlist"
-        title="Add competitor"
-        description="Tell us who to watch. We'll scan their pages and start flagging changes worth acting on."
-      />
-
+    <div className="space-y-6">
       {submitError && <ErrorState message={submitError} />}
 
       <form
         onSubmit={handleSubmit}
         className="space-y-5 rounded-2xl border border-ink-border bg-surface p-5 shadow-soft sm:p-6"
       >
+        <p className="text-sm text-muted">Add a business you want m.rror to watch.</p>
+
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-navy-500">Name</label>
+          <label className="mb-1.5 block text-sm font-medium text-navy-500">Competitor name</label>
           <input
             className={inputClass}
             value={name}
@@ -91,9 +94,9 @@ export function AddCompetitor() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-navy-500">Pages to watch</label>
+          <label className="mb-1.5 block text-sm font-medium text-navy-500">Pages to monitor</label>
           <p className="mb-2.5 text-xs text-muted">
-            Up to 3 pages. The menu or pricing page works best.
+            Up to 3 pages. Pricing, offerings and promotions pages work best.
           </p>
           <div className="space-y-2">
             {pageUrls.map((p, i) => (
@@ -153,6 +156,46 @@ export function AddCompetitor() {
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+export function AddCompetitor() {
+  const [mode, setMode] = useState<AddMode>('discover');
+
+  return (
+    <div className={`mx-auto space-y-8 ${mode === 'discover' ? 'max-w-4xl' : 'max-w-2xl'}`}>
+      <SectionHeader
+        as="h1"
+        eyebrow="Watchlist"
+        title="Who’s entering your reflection?"
+        description="Discover nearby businesses competing for the same customers, then choose which ones m.rror should watch."
+      />
+
+      <div className="inline-flex rounded-[12px] border border-ink-border bg-surface p-1 shadow-soft">
+        {MODES.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => setMode(m.id)}
+            className={`rounded-[9px] px-4 py-2 text-sm font-medium transition-colors duration-220 ${
+              mode === m.id
+                ? 'bg-semantic-opportunityBg text-charcoal'
+                : 'text-muted hover:text-charcoal'
+            }`}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Both stay mounted so search results and form entries survive a tab switch. */}
+      <div className={mode === 'discover' ? undefined : 'hidden'}>
+        <NearbyDiscovery />
+      </div>
+      <div className={mode === 'manual' ? undefined : 'hidden'}>
+        <ManualCompetitorForm />
+      </div>
     </div>
   );
 }

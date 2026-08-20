@@ -86,13 +86,13 @@ export function Settings() {
         <h2 className="font-serif text-lg font-semibold text-navy">Alerts</h2>
         <Toggle
           label="High-impact threats"
-          description="Reputation and competitive risks that can cost you guests."
+          description="Reputation and competitive risks that can cost you customers."
           checked={settings.alertHighImpact}
           onChange={(alertHighImpact) => updateSettings({ alertHighImpact })}
         />
         <Toggle
-          label="Pricing and menu changes"
-          description="When a watched competitor moves a price, bundle, or special."
+          label="Pricing and offering changes"
+          description="When a watched competitor moves a price, bundle, or promotion."
           checked={settings.alertPricing}
           onChange={(alertPricing) => updateSettings({ alertPricing })}
         />

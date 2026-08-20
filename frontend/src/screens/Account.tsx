@@ -24,7 +24,7 @@ export function Account() {
     setProfileError(null);
     setProfileSaved(false);
     if (!name.trim() || !restaurant.trim()) {
-      setProfileError('Name and restaurant are required.');
+      setProfileError('Name and business name are required.');
       return;
     }
     if (!isValidEmail(email)) {
@@ -68,7 +68,7 @@ export function Account() {
         as="h1"
         eyebrow="Account"
         title="Your profile"
-        description="How you appear in m.rror. This stays on this device; it does not change the restaurant we scan for."
+        description="How you appear in m.rror. This stays on this device; it does not change the business we scan for."
       />
 
       <form
@@ -80,7 +80,7 @@ export function Account() {
           <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-navy-500">Restaurant</label>
+          <label className="mb-1.5 block text-sm font-medium text-navy-500">Business name</label>
           <input
             className={inputClass}
             value={restaurant}

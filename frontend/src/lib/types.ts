@@ -16,6 +16,9 @@ export interface Business {
   city: string | null;
   offerings: string | null;
   created_at: string;
+  // Optional nearby-search fields — omitted until those columns exist.
+  address?: string | null;
+  scan_radius_miles?: number | null;
 }
 
 export interface Competitor {
@@ -28,6 +31,9 @@ export interface Competitor {
   last_checked_at: string | null;
   last_error: string | null;
   created_at: string;
+  // Optional nearby-search fields — omitted until those columns exist.
+  address?: string | null;
+  distance_miles?: number | null;
 }
 
 export interface Signal {

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Zap, Quote } from 'lucide-react';
+import { Zap, Quote, Lightbulb, AlertTriangle, Sparkles } from 'lucide-react';
 import { useRadar } from '@/lib/RadarContext';
 import { useNav } from '@/lib/nav';
 import {
@@ -9,13 +9,16 @@ import {
   IMPACT_VALUES,
   IMPACT_LABELS,
 } from '@/lib/format';
-import { ImpactBadge, SignalTypeBadge } from '@/components/Badges';
+import { ImpactBadge, SignalTypeBadge, CategoryBadge } from '@/components/Badges';
 import { EmptyState, ErrorState, Skeleton } from '@/components/States';
+import { SectionHeader } from '@/components/SectionHeader';
+import { InsightPanel } from '@/components/InsightPanel';
+import { findingTone, whyTone } from '@/lib/semantics';
 import type { Impact, Category, SignalWithCompetitor } from '@/lib/types';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-navy-400">
+    <label className="flex flex-col gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
       {label}
       {children}
     </label>
@@ -26,59 +29,72 @@ const selectClass =
   'rounded-[10px] border border-ink-border bg-white px-3 py-2 text-sm font-normal text-navy focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15';
 
 function SignalCard({ signal }: { signal: SignalWithCompetitor }) {
-  const findingLabel = signal.signal_type === 'baseline' ? 'What we found' : 'What changed';
+  const isChange = signal.signal_type === 'change';
+  const findingLabel = isChange ? 'What changed' : 'What we found';
+
   return (
-    <article className="overflow-hidden rounded-[14px] border border-ink-border bg-white transition hover:border-navy-200">
-      <div className="p-5 sm:p-6">
-        <div className="flex flex-wrap items-center gap-2">
+    <article
+      className={`overflow-hidden rounded-2xl border bg-white transition duration-200 ${
+        isChange
+          ? 'border-brand-blue/30 shadow-[0_10px_28px_-16px_rgba(8,104,217,0.28)]'
+          : 'border-ink-border'
+      }`}
+    >
+      {isChange && <div className="h-[3px] bg-gradient-to-r from-brand-blue to-brand-cyan" />}
+      <div className="p-5 sm:p-7">
+        <h3 className="text-[1.35rem] font-bold leading-snug tracking-tight text-navy">
+          {signal.title}
+        </h3>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-b border-ink-border pb-4">
           <span className="text-sm font-semibold text-navy">
             {signal.competitors?.name ?? 'Unknown competitor'}
           </span>
           <SignalTypeBadge type={signal.signal_type} />
           <ImpactBadge impact={signal.impact} />
-          <span className="rounded-full bg-navy-50 px-2.5 py-0.5 text-xs font-medium text-navy-500">
-            {CATEGORY_LABELS[signal.category]}
-          </span>
-          <span className="ml-auto text-xs text-navy-200">{relativeTime(signal.created_at)}</span>
+          <CategoryBadge category={signal.category} />
+          <span className="ml-auto text-xs text-muted">{relativeTime(signal.created_at)}</span>
         </div>
 
-        <h3 className="mt-3 text-lg font-bold leading-snug tracking-tight text-navy">
-          {signal.title}
-        </h3>
+        <div className="mt-5 space-y-3.5">
+          <InsightPanel
+            tone={findingTone(signal.category, isChange)}
+            label={findingLabel}
+            icon={isChange ? <Sparkles className="h-3.5 w-3.5" /> : undefined}
+          >
+            <p className="text-[15px] leading-relaxed text-navy-500">{signal.finding}</p>
+          </InsightPanel>
 
-        <div className="mt-5 space-y-4">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-navy-200">
-              {findingLabel}
-            </p>
-            <p className="mt-1 text-sm leading-relaxed text-navy-500">{signal.finding}</p>
-          </div>
+          <InsightPanel
+            tone={whyTone(signal.category)}
+            label="Why it matters"
+            icon={
+              signal.category === 'reputation' || signal.category === 'hours' ? (
+                <AlertTriangle className="h-3.5 w-3.5" />
+              ) : (
+                <Lightbulb className="h-3.5 w-3.5" />
+              )
+            }
+          >
+            <p className="text-[15px] leading-relaxed text-navy-500">{signal.why_it_matters}</p>
+          </InsightPanel>
 
-          <div className="border-t border-ink-border pt-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-navy-200">
-              Why it matters
-            </p>
-            <p className="mt-1 text-sm leading-relaxed text-navy-500">{signal.why_it_matters}</p>
-          </div>
-
-          <div className="rounded-[12px] border-l-[3px] border-brand-blue bg-brand-blue/[0.06] p-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-blue">
-              Do this
-            </p>
-            <p className="mt-1 text-[15px] font-semibold leading-relaxed text-navy">
+          <InsightPanel tone="action" label="Do this">
+            <p className="text-base font-semibold leading-relaxed text-navy">
               {signal.recommended_action}
             </p>
-          </div>
+          </InsightPanel>
 
           {signal.evidence && (
-            <div>
-              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-navy-200">
-                <Quote className="h-3.5 w-3.5" /> From their page
-              </p>
-              <blockquote className="mt-1.5 border-l-2 border-ink-border bg-navy-50/50 py-2 pl-3 pr-2 font-serif text-[13px] italic leading-relaxed text-navy-400">
+            <InsightPanel
+              tone="evidence"
+              label="From their page"
+              icon={<Quote className="h-3.5 w-3.5" />}
+            >
+              <blockquote className="font-serif text-[13px] italic leading-relaxed text-muted">
                 {signal.evidence}
               </blockquote>
-            </div>
+            </InsightPanel>
           )}
         </div>
       </div>
@@ -121,15 +137,15 @@ export function Signals() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-[28px] font-bold tracking-tight text-navy">Signals</h1>
-        <p className="mt-1.5 text-sm text-navy-400">
-          Every change we found, newest first, each with something to do about it.
-        </p>
-      </div>
+      <SectionHeader
+        as="h1"
+        eyebrow="Intelligence"
+        title="Signals"
+        description="Every change we found, newest first, each with something to do about it."
+      />
 
       {hasAnySignals && (
-        <div className="flex flex-wrap gap-3 rounded-[12px] border border-ink-border bg-white p-4">
+        <div className="flex flex-wrap gap-4 rounded-2xl border border-ink-border bg-white p-4 shadow-[0_8px_24px_-18px_rgba(16,35,52,0.16)] sm:p-5">
           <Field label="Impact">
             <select
               className={selectClass}
@@ -188,7 +204,7 @@ export function Signals() {
           description="Try widening your filters to see more of what your competitors are doing."
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {filtered.map((s) => (
             <SignalCard key={s.id} signal={s} />
           ))}

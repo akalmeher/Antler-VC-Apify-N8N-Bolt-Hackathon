@@ -7,9 +7,15 @@ html {
 }
 
 body {
-  font-feature-settings: 'cv01', 'cv02', 'cv03';
+  color: #102334;
+  font-feature-settings: 'cv01', 'cv02', 'cv03', 'ss01';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: #0868d9;
+  color: #fff;
 }
 
 /* Subtle scrollbar to match the minimal aesthetic */

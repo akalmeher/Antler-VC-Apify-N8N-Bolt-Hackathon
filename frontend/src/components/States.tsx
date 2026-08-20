@@ -30,11 +30,11 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-[14px] border border-dashed border-ink-border bg-white px-6 py-16 text-center">
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-navy-50 text-navy-400">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-navy-50 text-muted">
         {icon}
       </div>
       <h3 className="text-base font-semibold text-navy">{title}</h3>
-      <p className="mt-1.5 max-w-md text-sm leading-relaxed text-navy-400">{description}</p>
+      <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted">{description}</p>
       {action && <div className="mt-6">{action}</div>}
     </div>
   );

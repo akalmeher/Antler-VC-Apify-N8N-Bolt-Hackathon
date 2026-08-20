@@ -4,6 +4,7 @@ import { useRadar } from '@/lib/RadarContext';
 import { useNav } from '@/lib/nav';
 import { isValidUrl } from '@/lib/format';
 import { ErrorState } from '@/components/States';
+import { SectionHeader } from '@/components/SectionHeader';
 
 const inputClass =
   'w-full rounded-[10px] border border-ink-border bg-white px-3.5 py-2.5 text-sm text-navy placeholder:text-navy-200 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15';
@@ -55,18 +56,18 @@ export function AddCompetitor() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
-      <div>
-        <h1 className="text-[28px] font-bold tracking-tight text-navy">Add competitor</h1>
-        <p className="mt-1.5 text-sm text-navy-400">
-          Tell us who to watch. We'll scan their pages and start flagging changes worth acting on.
-        </p>
-      </div>
+      <SectionHeader
+        as="h1"
+        eyebrow="Watchlist"
+        title="Add competitor"
+        description="Tell us who to watch. We'll scan their pages and start flagging changes worth acting on."
+      />
 
       {submitError && <ErrorState message={submitError} />}
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-5 rounded-[14px] border border-ink-border bg-white p-5 sm:p-6"
+        className="space-y-5 rounded-2xl border border-ink-border bg-white p-5 shadow-[0_8px_24px_-18px_rgba(16,35,52,0.16)] sm:p-6"
       >
         <div>
           <label className="mb-1.5 block text-sm font-medium text-navy-500">Name</label>
@@ -93,7 +94,7 @@ export function AddCompetitor() {
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-navy-500">Pages to watch</label>
-          <p className="mb-2.5 text-xs text-navy-400">
+          <p className="mb-2.5 text-xs text-muted">
             Up to 3 pages. The menu or pricing page works best.
           </p>
           <div className="space-y-2">
@@ -140,7 +141,7 @@ export function AddCompetitor() {
           <button
             type="button"
             onClick={() => navigate('competitors')}
-            className="rounded-[10px] px-4 py-2 text-sm font-medium text-navy-400 transition hover:text-navy"
+            className="rounded-[10px] px-4 py-2 text-sm font-medium text-muted transition hover:text-navy"
           >
             Cancel
           </button>

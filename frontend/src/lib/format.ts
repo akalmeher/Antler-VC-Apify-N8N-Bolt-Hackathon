@@ -60,6 +60,14 @@ export function relativeTime(iso: string | null): string {
   return `${year} year${year === 1 ? '' : 's'} ago`;
 }
 
+export function displayHost(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
+
 export function isValidUrl(value: string): boolean {
   try {
     const u = new URL(value.trim());

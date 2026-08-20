@@ -1,29 +1,45 @@
 import { useMemo, useState } from 'react';
-import { ExternalLink, RefreshCw, Store, AlertTriangle } from 'lucide-react';
+import { ExternalLink, RefreshCw, Store, AlertTriangle, Clock, Zap, ArrowRight, Sparkles, MapPin } from 'lucide-react';
 import { useRadar } from '@/lib/RadarContext';
 import { useNav } from '@/lib/nav';
-import { relativeTime } from '@/lib/format';
+import { useUi } from '@/lib/UiContext';
+import { displayHost, relativeTime } from '@/lib/format';
+import {
+  competitorAddress,
+  competitorDistance,
+  pickBiggestChange,
+  pickComplaint,
+  pickTopOpportunity,
+} from '@/lib/insights';
 import { StatusBadge } from '@/components/Badges';
 import { EmptyState, ErrorState, Skeleton } from '@/components/States';
 import { ScanNotice } from '@/components/ScanNotice';
-import type { Competitor } from '@/lib/types';
+import { SectionHeader } from '@/components/SectionHeader';
+import { LocationContext } from '@/components/LocationContext';
+import type { Competitor, SignalWithCompetitor } from '@/lib/types';
 
-function CompetitorRow({
+function CompetitorCard({
   competitor,
-  signalCount,
+  signals,
   onRescan,
 }: {
   competitor: Competitor;
-  signalCount: number;
+  signals: SignalWithCompetitor[];
   onRescan: (id: string) => Promise<void>;
 }) {
   const { scanStates, clearScanState } = useRadar();
-  const { navigate } = useNav();
+  const { openCompetitor } = useUi();
   const [submitting, setSubmitting] = useState(false);
   const scan = scanStates[competitor.id];
   const isScanning = competitor.status === 'scanning' || submitting;
+  const distance = competitorDistance(competitor);
+  const address = competitorAddress(competitor);
+  const complaint = pickComplaint(signals);
+  const change = pickBiggestChange(signals);
+  const opportunity = pickTopOpportunity(signals);
 
-  const handleRescan = async () => {
+  const handleRescan = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     setSubmitting(true);
     try {
       await onRescan(competitor.id);
@@ -33,78 +49,120 @@ function CompetitorRow({
   };
 
   return (
-    <div className="rounded-[12px] border border-ink-border bg-white p-4 sm:p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1">
+    <article
+      onClick={() => openCompetitor(competitor.id)}
+      className="flex cursor-pointer flex-col rounded-2xl border border-ink-border bg-white p-5 transition duration-200 hover:border-brand-blue/35 hover:shadow-[0_12px_32px_-16px_rgba(16,35,52,0.2)]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-semibold text-navy">{competitor.name}</h3>
+            <h3 className="text-base font-bold tracking-tight text-navy">{competitor.name}</h3>
             <StatusBadge status={competitor.status} />
           </div>
           <a
             href={competitor.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-sm text-brand-blue hover:text-brand-cyan"
+            onClick={(e) => e.stopPropagation()}
+            className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate text-sm font-medium text-brand-blue hover:text-brand-cyan"
           >
-            <span className="truncate">{competitor.url}</span>
+            <span className="truncate">{displayHost(competitor.url)}</span>
             <ExternalLink className="h-3.5 w-3.5 shrink-0" />
           </a>
-
-          {competitor.status === 'error' && competitor.last_error && (
-            <div className="mt-2 flex items-start gap-2 rounded-[10px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span className="break-words">{competitor.last_error}</span>
-            </div>
+          {(address || distance) && (
+            <p className="mt-1 flex items-center gap-1 text-xs text-muted">
+              <MapPin className="h-3 w-3" />
+              {address}
+              {address && distance ? ' · ' : ''}
+              {distance}
+            </p>
           )}
-
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-navy-400">
-            <span>
-              Last checked:{' '}
-              <span className="text-navy-500">{relativeTime(competitor.last_checked_at)}</span>
-            </span>
-            <button
-              onClick={() => navigate('signals', { competitorId: competitor.id })}
-              className="text-navy-500 hover:text-brand-blue"
-            >
-              {signalCount} signal{signalCount === 1 ? '' : 's'}
-            </button>
-          </div>
         </div>
+        <button
+          onClick={handleRescan}
+          disabled={isScanning}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-border bg-white px-3 py-2 text-xs font-semibold text-navy transition hover:bg-navy-50 disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isScanning ? 'animate-spin' : ''}`} />
+          {isScanning ? 'Scanning…' : 'Re-scan'}
+        </button>
+      </div>
 
-        <div className="shrink-0">
-          <button
-            onClick={handleRescan}
-            disabled={isScanning}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-[10px] border border-ink-border bg-white px-3.5 py-2 text-sm font-medium text-navy-500 transition hover:border-navy-200 hover:bg-navy-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-          >
-            <RefreshCw className={`h-4 w-4 ${isScanning ? 'animate-spin' : ''}`} />
-            {isScanning ? 'Scanning…' : 'Re-scan now'}
-          </button>
+      {competitor.status === 'error' && competitor.last_error && (
+        <div className="mt-3 flex items-start gap-2 rounded-xl border border-semantic-threatBorder bg-semantic-threatBg px-3 py-2 text-sm text-semantic-threat">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span className="break-words">{competitor.last_error}</span>
         </div>
+      )}
+
+      {complaint && (
+        <div className="mt-3 rounded-xl border border-semantic-threatBorder bg-semantic-threatBg p-3">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-semantic-threat">
+            Reputation weakness
+          </p>
+          <p className="mt-1 line-clamp-2 text-sm text-navy">{complaint.finding}</p>
+        </div>
+      )}
+
+      {change && (
+        <div className="mt-3 rounded-xl border border-semantic-pricingBorder bg-semantic-pricingBg p-3">
+          <p className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-brand-blue">
+            <Sparkles className="h-3.5 w-3.5" /> Recent change
+          </p>
+          <p className="mt-1 line-clamp-2 text-sm text-navy">{change.title}</p>
+        </div>
+      )}
+
+      {opportunity && opportunity.id !== change?.id && opportunity.id !== complaint?.id && (
+        <div className="mt-3 rounded-xl border border-semantic-opportunityBorder bg-semantic-opportunityBg p-3">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-semantic-opportunity">
+            How to respond
+          </p>
+          <p className="mt-1 line-clamp-2 text-sm text-navy">{opportunity.recommended_action}</p>
+        </div>
+      )}
+
+      {signals.length === 0 && (
+        <p className="mt-3 text-sm text-muted">No signals yet. Open details or run a scan.</p>
+      )}
+
+      <div className="mt-auto flex items-center justify-between border-t border-ink-border pt-3 text-xs text-muted">
+        <span className="inline-flex items-center gap-1">
+          <Clock className="h-3.5 w-3.5" />
+          {relativeTime(competitor.last_checked_at)}
+        </span>
+        <span className="inline-flex items-center gap-1 font-semibold text-navy">
+          <Zap className="h-3.5 w-3.5" />
+          {signals.length} signal{signals.length === 1 ? '' : 's'}
+          <ArrowRight className="h-3.5 w-3.5 text-brand-blue" />
+        </span>
       </div>
 
       {scan && (
-        <div className="mt-3">
+        <div className="mt-3" onClick={(e) => e.stopPropagation()}>
           <ScanNotice
             phase={scan.phase}
             message={scan.message}
-            onDismiss={
-              scan.phase === 'scanning' ? undefined : () => clearScanState(competitor.id)
-            }
+            onDismiss={scan.phase === 'scanning' ? undefined : () => clearScanState(competitor.id)}
           />
         </div>
       )}
-    </div>
+    </article>
   );
 }
 
 export function Competitors() {
-  const { competitors, signals, loading, error, startRescan, addScan, clearAddScan } = useRadar();
+  const { business, competitors, signals, loading, error, startRescan, addScan, clearAddScan } =
+    useRadar();
   const { navigate } = useNav();
 
-  const counts = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const s of signals) map.set(s.competitor_id, (map.get(s.competitor_id) ?? 0) + 1);
+  const byCompetitor = useMemo(() => {
+    const map = new Map<string, SignalWithCompetitor[]>();
+    for (const s of signals) {
+      const list = map.get(s.competitor_id) ?? [];
+      list.push(s);
+      map.set(s.competitor_id, list);
+    }
     return map;
   }, [signals]);
 
@@ -124,14 +182,14 @@ export function Competitors() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-[28px] font-bold tracking-tight text-navy">
-          Competitors we're watching
-        </h1>
-        <p className="mt-1.5 text-sm text-navy-400">
-          Restaurants we scan for pricing, menu and promotion changes.
-        </p>
-      </div>
+      <SectionHeader
+        as="h1"
+        eyebrow="Watchlist"
+        title="Competitors we're watching"
+        description="Restaurants we scan for pricing, menu and promotion changes."
+      />
+
+      <LocationContext business={business} competitorCount={competitors.length} />
 
       {showAddBanner && (
         <ScanNotice
@@ -149,19 +207,19 @@ export function Competitors() {
           action={
             <button
               onClick={() => navigate('add')}
-              className="rounded-[10px] bg-brand-blue px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-blue/90"
+              className="rounded-xl bg-brand-blue px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-blue/90"
             >
               Add competitor
             </button>
           }
         />
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-5 md:grid-cols-2">
           {competitors.map((c) => (
-            <CompetitorRow
+            <CompetitorCard
               key={c.id}
               competitor={c}
-              signalCount={counts.get(c.id) ?? 0}
+              signals={byCompetitor.get(c.id) ?? []}
               onRescan={startRescan}
             />
           ))}

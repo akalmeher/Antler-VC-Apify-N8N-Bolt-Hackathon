@@ -28,7 +28,7 @@ import type { SignalWithCompetitor } from '@/lib/types';
 
 function MiniSignal({ signal }: { signal: SignalWithCompetitor }) {
   return (
-    <div className="rounded-xl border border-ink-border bg-white p-3.5">
+    <div className="rounded-xl border border-ink-border bg-ink-bg p-3.5">
       <div className="flex flex-wrap items-center gap-2">
         <SignalTypeBadge type={signal.signal_type} />
         <CategoryBadge category={signal.category} />
@@ -69,20 +69,23 @@ export function CompetitorDrawer() {
   if (!competitor) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-navy/40 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-50 flex justify-end bg-charcoal/25 animate-fade">
       <button className="absolute inset-0 cursor-default" aria-label="Close details" onClick={closeCompetitor} />
-      <aside className="relative z-10 flex h-full w-full max-w-xl flex-col overflow-y-auto border-l border-ink-border bg-ink-bg shadow-2xl">
-        <div className="sticky top-0 z-20 flex items-start justify-between gap-3 border-b border-ink-border bg-ink-bg/95 px-5 py-4 backdrop-blur-md">
+      <aside className="relative z-10 flex h-full w-full max-w-xl flex-col overflow-y-auto border-l border-ink-border bg-surface shadow-lift animate-drawer-in">
+        <div className="sticky top-0 z-20 flex items-start justify-between gap-3 border-b border-ink-border bg-surface/95 px-5 py-4 backdrop-blur-md">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl font-bold tracking-tight text-navy">{competitor.name}</h2>
+            <h2 className="font-serif text-lg font-semibold leading-snug tracking-tight text-charcoal">
+              A closer look in the mirror
+            </h2>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <p className="text-base font-semibold tracking-tight text-charcoal">{competitor.name}</p>
               <StatusBadge status={competitor.status} />
             </div>
             <a
               href={competitor.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-brand-blue hover:text-brand-cyan"
+              className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-charcoal hover:text-brand-sage"
             >
               {displayHost(competitor.url)}
               <ExternalLink className="h-3.5 w-3.5" />
@@ -97,7 +100,7 @@ export function CompetitorDrawer() {
           </div>
           <button
             onClick={closeCompetitor}
-            className="rounded-lg p-2 text-muted transition hover:bg-navy-50 hover:text-navy"
+            className="rounded-lg p-2 text-muted transition hover:bg-charcoal-50 hover:text-charcoal"
             aria-label="Close"
           >
             <X className="h-5 w-5" />
@@ -132,7 +135,7 @@ export function CompetitorDrawer() {
             <button
               onClick={() => void startRescan(competitor.id)}
               disabled={competitor.status === 'scanning'}
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-navy px-4 py-2 text-sm font-semibold text-white transition hover:bg-navy-600 disabled:opacity-50"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-charcoal px-4 py-2 text-sm font-semibold text-surface transition-colors duration-220 hover:bg-charcoal-600 disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${competitor.status === 'scanning' ? 'animate-spin' : ''}`} />
               {competitor.status === 'scanning' ? 'Scanning…' : 'Re-scan now'}

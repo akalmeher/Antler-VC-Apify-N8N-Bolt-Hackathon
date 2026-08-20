@@ -3,11 +3,11 @@ import { CheckCircle2, Loader2, X, AlertTriangle, Clock } from 'lucide-react';
 type Phase = 'searching' | 'scanning' | 'done' | 'timeout' | 'error';
 
 const CONFIG: Record<Phase, { ring: string; text: string; icon: typeof Loader2; spin: boolean }> = {
-  searching: { ring: 'border-brand-blue/25 bg-brand-blue/5', text: 'text-brand-blue', icon: Loader2, spin: true },
-  scanning: { ring: 'border-brand-blue/25 bg-brand-blue/5', text: 'text-brand-blue', icon: Loader2, spin: true },
-  done: { ring: 'border-emerald-200 bg-emerald-50', text: 'text-emerald-800', icon: CheckCircle2, spin: false },
-  timeout: { ring: 'border-ink-border bg-navy-50', text: 'text-navy-500', icon: Clock, spin: false },
-  error: { ring: 'border-red-200 bg-red-50', text: 'text-red-800', icon: AlertTriangle, spin: false },
+  searching: { ring: 'border-ink-border bg-ink-bg', text: 'text-charcoal', icon: Loader2, spin: true },
+  scanning: { ring: 'border-ink-border bg-ink-bg', text: 'text-charcoal', icon: Loader2, spin: true },
+  done: { ring: 'border-semantic-opportunityBorder bg-semantic-opportunityBg', text: 'text-semantic-opportunity', icon: CheckCircle2, spin: false },
+  timeout: { ring: 'border-ink-border bg-charcoal-50', text: 'text-charcoal-500', icon: Clock, spin: false },
+  error: { ring: 'border-semantic-threatBorder bg-semantic-threatBg', text: 'text-semantic-threat', icon: AlertTriangle, spin: false },
 };
 
 export function ScanNotice({

@@ -7,8 +7,8 @@ const base =
 
 export function StatusBadge({ status }: { status: CompetitorStatus }) {
   const styles: Record<CompetitorStatus, string> = {
-    pending: 'border-ink-border bg-white text-muted',
-    scanning: 'border-brand-blue/30 bg-brand-blue/10 text-brand-blue',
+    pending: 'border-ink-border bg-surface text-muted',
+    scanning: 'border-semantic-opportunityBorder bg-semantic-opportunityBg text-semantic-opportunity',
     active: 'border-semantic-opportunityBorder bg-semantic-opportunityBg text-semantic-opportunity',
     error: 'border-semantic-threatBorder bg-semantic-threatBg text-semantic-threat',
   };
@@ -16,8 +16,7 @@ export function StatusBadge({ status }: { status: CompetitorStatus }) {
     <span className={`${base} ${styles[status]}`}>
       {status === 'scanning' && (
         <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-cyan opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-blue" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-sage" />
         </span>
       )}
       {STATUS_LABELS[status]}
@@ -31,8 +30,8 @@ export function ImpactBadge({ impact }: { impact: Impact }) {
 
 export function SignalTypeBadge({ type }: { type: SignalType }) {
   const styles: Record<SignalType, string> = {
-    baseline: 'border-ink-border bg-navy-50 font-medium text-muted',
-    change: 'border-transparent bg-brand-blue text-white',
+    baseline: 'border-ink-border bg-ink-bg font-medium text-muted',
+    change: 'border-semantic-warningBorder bg-semantic-warningBg text-brand-dusty',
   };
   return <span className={`${base} ${styles[type]}`}>{SIGNAL_TYPE_LABELS[type]}</span>;
 }

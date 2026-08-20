@@ -5,9 +5,7 @@ import { useNav } from '@/lib/nav';
 import { isValidUrl } from '@/lib/format';
 import { ErrorState } from '@/components/States';
 import { SectionHeader } from '@/components/SectionHeader';
-
-const inputClass =
-  'w-full rounded-[10px] border border-ink-border bg-white px-3.5 py-2.5 text-sm text-navy placeholder:text-navy-200 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15';
+import { inputClass } from '@/lib/forms';
 
 export function AddCompetitor() {
   const { startAddCompetitor } = useRadar();
@@ -67,7 +65,7 @@ export function AddCompetitor() {
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-5 rounded-2xl border border-ink-border bg-white p-5 shadow-[0_8px_24px_-18px_rgba(16,35,52,0.16)] sm:p-6"
+        className="space-y-5 rounded-2xl border border-ink-border bg-surface p-5 shadow-soft sm:p-6"
       >
         <div>
           <label className="mb-1.5 block text-sm font-medium text-navy-500">Name</label>
@@ -77,7 +75,7 @@ export function AddCompetitor() {
             onChange={(e) => setName(e.target.value)}
             placeholder="Vaquero Taqueria"
           />
-          {touched && nameError && <p className="mt-1 text-xs text-red-600">{nameError}</p>}
+          {touched && nameError && <p className="mt-1 text-xs text-semantic-threat">{nameError}</p>}
         </div>
 
         <div>
@@ -89,7 +87,7 @@ export function AddCompetitor() {
             placeholder="https://vaquero.example"
             inputMode="url"
           />
-          {touched && urlError && <p className="mt-1 text-xs text-red-600">{urlError}</p>}
+          {touched && urlError && <p className="mt-1 text-xs text-semantic-threat">{urlError}</p>}
         </div>
 
         <div>
@@ -112,7 +110,7 @@ export function AddCompetitor() {
                     <button
                       type="button"
                       onClick={() => removePage(i)}
-                      className="shrink-0 rounded-[10px] border border-ink-border p-2.5 text-navy-200 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                      className="shrink-0 rounded-[10px] border border-ink-border p-2.5 text-navy-200 transition-colors duration-220 hover:border-semantic-threatBorder hover:bg-semantic-threatBg hover:text-semantic-threat"
                       aria-label="Remove page"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -120,7 +118,7 @@ export function AddCompetitor() {
                   )}
                 </div>
                 {touched && pageErrors[i] && (
-                  <p className="mt-1 text-xs text-red-600">{pageErrors[i]}</p>
+                  <p className="mt-1 text-xs text-semantic-threat">{pageErrors[i]}</p>
                 )}
               </div>
             ))}
@@ -130,7 +128,7 @@ export function AddCompetitor() {
             <button
               type="button"
               onClick={addPage}
-              className="mt-2.5 inline-flex items-center gap-1.5 text-sm font-medium text-brand-blue hover:text-brand-cyan"
+              className="mt-2.5 inline-flex items-center gap-1.5 text-sm font-medium text-charcoal hover:text-brand-sage"
             >
               <Plus className="h-4 w-4" /> Add page URL
             </button>
@@ -148,7 +146,7 @@ export function AddCompetitor() {
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center gap-2 rounded-[10px] bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-blue/90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="hover-lift inline-flex items-center gap-2 rounded-[10px] bg-navy px-5 py-2.5 text-sm font-semibold text-surface shadow-soft disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {submitting ? 'Starting scan…' : 'Start scan'}

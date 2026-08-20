@@ -4,6 +4,7 @@ import { useNav } from '@/lib/nav';
 import { useUi } from '@/lib/UiContext';
 import { relativeTime, IMPACT_RANK, CATEGORY_LABELS } from '@/lib/format';
 import { pickBiggestChange, pickPricingPressure, pickTopOpportunity } from '@/lib/insights';
+import { isThreatening, isFavorable } from '@/lib/semantics';
 import { ImpactBadge, SignalTypeBadge, CategoryBadge } from '@/components/Badges';
 import { EmptyState, ErrorState, Skeleton } from '@/components/States';
 import { SectionHeader } from '@/components/SectionHeader';
@@ -21,8 +22,8 @@ function CountChip({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-ink-border bg-white px-4 py-3">
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-navy-50 text-navy-500">
+    <div className="flex items-center gap-3 rounded-xl border border-ink-border bg-surface px-4 py-3 shadow-soft">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-charcoal-50 text-charcoal">
         {icon}
       </span>
       <div>
@@ -73,7 +74,7 @@ function TakeawayCard({
       type="button"
       onClick={onClick}
       disabled={!onClick}
-      className="rounded-2xl border border-ink-border bg-white p-5 text-left transition hover:border-navy-200 disabled:cursor-default"
+      className="hover-lift rounded-2xl border border-ink-border bg-surface p-5 text-left shadow-soft disabled:cursor-default"
     >
       <div className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider ${kickerClass}`}>
         <span className={`rounded-md p-1 ${iconClass}`}>{icon}</span>
@@ -83,7 +84,7 @@ function TakeawayCard({
         {title}
       </h3>
       <p className="mt-1.5 text-xs leading-relaxed text-muted">{body}</p>
-      {meta && <p className="mt-2 text-[11px] font-medium text-navy-400">{meta}</p>}
+      {meta && <p className="mt-2 text-[11px] font-medium text-muted">{meta}</p>}
     </button>
   );
 }
@@ -98,10 +99,12 @@ function SignalRow({
   return (
     <button
       onClick={onOpen}
-      className={`group flex w-full items-start justify-between gap-4 rounded-xl border bg-white p-4 text-left transition duration-200 ${
-        signal.signal_type === 'change'
-          ? 'border-brand-blue/20 hover:border-brand-blue/40'
-          : 'border-ink-border hover:border-navy-200'
+      className={`hover-lift group flex w-full items-start justify-between gap-4 rounded-xl border bg-surface p-4 text-left shadow-soft ${
+        isThreatening(signal.category, signal.impact)
+          ? 'border-semantic-threatBorder'
+          : signal.signal_type === 'change'
+            ? 'border-semantic-warningBorder'
+            : 'border-ink-border'
       }`}
     >
       <div className="min-w-0">
@@ -162,70 +165,100 @@ export function Dashboard() {
       <SectionHeader
         as="h1"
         eyebrow="Overview"
-        title="Dashboard"
-        description="What your competitors are doing, and what to do about it."
+        title="What the mirror sees"
+        description="A live reflection of the competitive moves shaping your market."
       />
 
       <LocationContext business={business} competitorCount={competitorCount} />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <TakeawayCard
-          icon={<Sparkles className="h-4 w-4" />}
-          kicker="Top opportunity"
-          kickerClass="text-semantic-opportunity"
-          iconClass="bg-semantic-opportunityBg text-semantic-opportunity"
-          title={opportunity?.title ?? 'No opportunity signal yet'}
-          body={
-            opportunity
-              ? opportunity.recommended_action
-              : 'Scan a competitor to surface a concrete opening you can act on this week.'
-          }
-          meta={
-            opportunity
-              ? `${opportunity.competitors?.name ?? 'Competitor'} · ${CATEGORY_LABELS[opportunity.category]}`
-              : undefined
-          }
-          empty={!opportunity}
-          onClick={opportunity ? () => openCompetitor(opportunity.competitor_id) : undefined}
-        />
-        <TakeawayCard
-          icon={<Zap className="h-4 w-4" />}
-          kicker="Biggest recent change"
-          kickerClass="text-brand-blue"
-          iconClass="bg-semantic-pricingBg text-brand-blue"
-          title={biggestChange?.title ?? 'No change detected yet'}
-          body={
-            biggestChange
-              ? biggestChange.finding
-              : 'A second scan of a competitor is what produces a change signal.'
-          }
-          meta={
-            biggestChange
-              ? `${biggestChange.competitors?.name ?? 'Competitor'} · ${relativeTime(biggestChange.created_at)}`
-              : undefined
-          }
-          empty={!biggestChange}
-          onClick={biggestChange ? () => openCompetitor(biggestChange.competitor_id) : undefined}
-        />
-        <TakeawayCard
-          icon={<DollarSign className="h-4 w-4" />}
-          kicker="Pricing pressure"
-          kickerClass="text-semantic-pricing"
-          iconClass="bg-semantic-pricingBg text-semantic-pricing"
-          title={pricing?.title ?? 'No pricing signal yet'}
-          body={
-            pricing
-              ? pricing.finding
-              : 'Pricing and menu signals appear here once a scan finds a comparable price point.'
-          }
-          meta={
-            pricing
-              ? `${pricing.competitors?.name ?? 'Competitor'} · ${CATEGORY_LABELS[pricing.category]}`
-              : undefined
-          }
-          empty={!pricing}
-          onClick={pricing ? () => openCompetitor(pricing.competitor_id) : undefined}
-        />
+        <div className="animate-rise stagger-1">
+          <TakeawayCard
+            icon={<Sparkles className="h-4 w-4" />}
+            kicker="Where the reflection breaks"
+            kickerClass="text-semantic-opportunity"
+            iconClass="bg-semantic-opportunityBg text-semantic-opportunity"
+            title={opportunity?.title ?? 'No opportunity signal yet'}
+            body={
+              opportunity
+                ? opportunity.recommended_action
+                : 'Scan a competitor to surface a concrete opening you can act on this week.'
+            }
+            meta={
+              opportunity
+                ? `${opportunity.competitors?.name ?? 'Competitor'} · ${CATEGORY_LABELS[opportunity.category]}`
+                : undefined
+            }
+            empty={!opportunity}
+            onClick={opportunity ? () => openCompetitor(opportunity.competitor_id) : undefined}
+          />
+        </div>
+        <div className="animate-rise stagger-2">
+          <TakeawayCard
+            icon={<Zap className="h-4 w-4" />}
+            kicker="Biggest recent change"
+            kickerClass={
+              biggestChange && isThreatening(biggestChange.category, biggestChange.impact)
+                ? 'text-semantic-threat'
+                : biggestChange && isFavorable(biggestChange.category)
+                  ? 'text-semantic-opportunity'
+                  : 'text-brand-dusty'
+            }
+            iconClass={
+              biggestChange && isThreatening(biggestChange.category, biggestChange.impact)
+                ? 'bg-semantic-threatBg text-semantic-threat'
+                : biggestChange && isFavorable(biggestChange.category)
+                  ? 'bg-semantic-opportunityBg text-semantic-opportunity'
+                  : 'bg-semantic-warningBg text-brand-dusty'
+            }
+            title={biggestChange?.title ?? 'No change detected yet'}
+            body={
+              biggestChange
+                ? biggestChange.finding
+                : 'A second scan of a competitor is what produces a change signal.'
+            }
+            meta={
+              biggestChange
+                ? `${biggestChange.competitors?.name ?? 'Competitor'} · ${relativeTime(biggestChange.created_at)}`
+                : undefined
+            }
+            empty={!biggestChange}
+            onClick={biggestChange ? () => openCompetitor(biggestChange.competitor_id) : undefined}
+          />
+        </div>
+        <div className="animate-rise stagger-3">
+          <TakeawayCard
+            icon={<DollarSign className="h-4 w-4" />}
+            kicker="Pricing pressure"
+            kickerClass={
+              pricing && isThreatening(pricing.category, pricing.impact)
+                ? 'text-semantic-threat'
+                : pricing && isFavorable(pricing.category)
+                  ? 'text-semantic-opportunity'
+                  : 'text-charcoal'
+            }
+            iconClass={
+              pricing && isThreatening(pricing.category, pricing.impact)
+                ? 'bg-semantic-threatBg text-semantic-threat'
+                : pricing && isFavorable(pricing.category)
+                  ? 'bg-semantic-opportunityBg text-semantic-opportunity'
+                  : 'bg-charcoal-50 text-charcoal'
+            }
+            title={pricing?.title ?? 'No pricing signal yet'}
+            body={
+              pricing
+                ? pricing.finding
+                : 'Pricing and menu signals appear here once a scan finds a comparable price point.'
+            }
+            meta={
+              pricing
+                ? `${pricing.competitors?.name ?? 'Competitor'} · ${CATEGORY_LABELS[pricing.category]}`
+                : undefined
+            }
+            empty={!pricing}
+            onClick={pricing ? () => openCompetitor(pricing.competitor_id) : undefined}
+          />
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -246,7 +279,7 @@ export function Dashboard() {
           action={
             <button
               onClick={() => navigate('competitors')}
-              className="rounded-xl bg-navy px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-600"
+              className="hover-lift rounded-xl bg-navy px-4 py-2.5 text-sm font-semibold text-surface shadow-soft"
             >
               Go to competitors
             </button>
@@ -258,11 +291,11 @@ export function Dashboard() {
             <section className="space-y-4">
               <SectionHeader
                 eyebrow="Movement"
-                title="Recent changes"
+                title="What shifted in the mirror"
                 action={
                   <button
                     onClick={openSignals}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-brand-blue hover:text-brand-cyan"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-charcoal transition-colors duration-220 hover:text-brand-sage"
                   >
                     See all <ArrowRight className="h-4 w-4" />
                   </button>
@@ -299,11 +332,11 @@ export function Dashboard() {
             <section className="space-y-4">
               <SectionHeader
                 eyebrow="Next moves"
-                title="Action recommendations"
+                title="Your next move"
                 action={
                   <button
                     onClick={openSignals}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-brand-blue hover:text-brand-cyan"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-charcoal transition-colors duration-220 hover:text-brand-sage"
                   >
                     See all signals <ArrowRight className="h-4 w-4" />
                   </button>

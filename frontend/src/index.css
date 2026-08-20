@@ -3,30 +3,72 @@
 @tailwind utilities;
 
 html {
-  background-color: #fcfcfb;
+  background-color: #f4efe7;
+  scroll-behavior: smooth;
 }
 
 body {
-  color: #102334;
+  color: #2d2d2d;
   font-feature-settings: 'cv01', 'cv02', 'cv03', 'ss01';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background: #0868d9;
-  color: #fff;
+  background: #7e9a7f;
+  color: #fbf8f3;
 }
 
-/* Subtle scrollbar to match the minimal aesthetic */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #dce5ee;
+  background: #d8d0c5;
   border-radius: 6px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #c7d3dc;
+  background: #c4b9ab;
+}
+
+.hover-lift {
+  transition: transform 220ms ease-out, box-shadow 220ms ease-out, border-color 220ms ease-out;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 32px -16px rgba(45, 45, 45, 0.18);
+}
+
+.reveal-text {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 700ms ease-out,
+    transform 700ms ease-out;
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal-text.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.stagger-1 { animation-delay: 40ms; }
+.stagger-2 { animation-delay: 80ms; }
+.stagger-3 { animation-delay: 120ms; }
+.stagger-4 { animation-delay: 160ms; }
+.stagger-5 { animation-delay: 200ms; }
+.stagger-6 { animation-delay: 240ms; }
+
+.stagger-text-1 { animation-delay: 80ms; }
+.stagger-text-2 { animation-delay: 180ms; }
+.stagger-text-3 { animation-delay: 320ms; }
+.stagger-text-4 { animation-delay: 460ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-text,
+  .reveal-text.is-visible {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }

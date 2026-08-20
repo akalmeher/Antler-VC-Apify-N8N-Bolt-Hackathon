@@ -26,32 +26,32 @@ const TONES: Record<InsightTone, { wrap: string; label: string }> = {
     label: 'text-semantic-warning',
   },
   action: {
-    wrap: 'border-brand-blue/25 border-l-[3px] border-l-brand-blue bg-semantic-pricingBg',
-    label: 'text-brand-blue',
+    wrap: 'border-semantic-opportunityBorder border-l-[3px] border-l-brand-sage bg-semantic-opportunityBg',
+    label: 'text-brand-sage',
   },
   change: {
-    wrap: 'border-brand-cyan/30 bg-semantic-pricingBg',
-    label: 'text-brand-blue',
+    wrap: 'border-semantic-warningBorder bg-surface',
+    label: 'text-brand-dusty',
   },
   finding: {
-    wrap: 'border-ink-border bg-[#F7F9FB]',
+    wrap: 'border-ink-border bg-ink-bg',
     label: 'text-muted',
   },
   evidence: {
-    wrap: 'border-ink-border bg-white',
+    wrap: 'border-ink-border bg-ink-bg',
     label: 'text-muted',
   },
   pricing: {
-    wrap: 'border-semantic-pricingBorder bg-semantic-pricingBg',
-    label: 'text-semantic-pricing',
+    wrap: 'border-ink-border bg-surface',
+    label: 'text-charcoal',
   },
   promotion: {
-    wrap: 'border-semantic-promotionBorder bg-semantic-promotionBg',
-    label: 'text-semantic-promotion',
+    wrap: 'border-semantic-opportunityBorder bg-semantic-opportunityBg',
+    label: 'text-semantic-opportunity',
   },
   positioning: {
-    wrap: 'border-semantic-positioningBorder bg-semantic-positioningBg',
-    label: 'text-semantic-positioning',
+    wrap: 'border-semantic-opportunityBorder bg-semantic-opportunityBg',
+    label: 'text-semantic-opportunity',
   },
 };
 

@@ -22,7 +22,7 @@ export function ScanNotice({
   const cfg = CONFIG[phase];
   const Icon = cfg.icon;
   return (
-    <div className={`flex items-start gap-3 rounded-[12px] border px-4 py-3 text-sm ${cfg.ring} ${cfg.text}`}>
+    <div className={`relative -bottom-1 flex items-start gap-3 rounded-[12px] border px-4 py-3 text-sm ${cfg.ring} ${cfg.text}`}>
       <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${cfg.spin ? 'animate-spin' : ''}`} />
       <p className="flex-1 break-words font-medium">{message}</p>
       {onDismiss && (

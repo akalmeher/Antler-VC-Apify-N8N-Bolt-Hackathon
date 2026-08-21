@@ -143,16 +143,18 @@ function CompetitorCard({
         <p className="mt-3 text-sm text-muted">No signals yet. Open details or run a scan.</p>
       )}
 
-      <div className="relative top-3 mt-auto flex items-center justify-between border-t border-ink-border pt-3 text-xs text-muted">
-        <span className="inline-flex items-center gap-1">
+      <div className="mt-auto pt-4">
+        <div className="flex items-center justify-between border-t border-ink-border pb-2 text-xs text-muted">
+        <span className="relative -bottom-3 inline-flex items-center gap-1">
           <Clock className="h-3.5 w-3.5" />
           {relativeTime(competitor.last_checked_at)}
         </span>
-        <span className="inline-flex items-center gap-1 font-semibold text-navy">
+        <span className="relative -bottom-3 inline-flex items-center gap-1 font-semibold text-navy">
           <Zap className="h-3.5 w-3.5" />
           {signals.length} signal{signals.length === 1 ? '' : 's'}
           <ArrowRight className="h-3.5 w-3.5 text-charcoal" />
         </span>
+      </div>
       </div>
 
       {scan && (

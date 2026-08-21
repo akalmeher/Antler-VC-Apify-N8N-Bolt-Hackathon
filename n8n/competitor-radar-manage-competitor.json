@@ -1,0 +1,583 @@
+{
+  "name": "Competitor Radar - Manage Competitor",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "PATCH",
+        "path": "=edit-competitor",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        80
+      ],
+      "id": "707608f3-cc2c-4833-8c49-1dd1eef66017",
+      "name": "Webhook: Edit Competitor",
+      "webhookId": "a79dc5d4-4038-4260-a4a5-85bab6323fb6"
+    },
+    {
+      "parameters": {
+        "url": "<<SUPABASE_URL>>/rest/v1/competitors",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ 'eq.' + $('Webhook: Edit Competitor').first().json.body.competitor_id }}"
+            },
+            {
+              "name": "select",
+              "value": "=id,business_id,name,url,page_urls,status"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        80
+      ],
+      "id": "9e5d13c2-c3f8-4b92-8371-03e99069a9ad",
+      "name": "Load Existing Competitor"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  success: true,\n  competitor_id: $('Webhook: Edit Competitor').first().json.body.competitor_id,\n  name: $('Webhook: Edit Competitor').first().json.body.name,\n  url: $('Webhook: Edit Competitor').first().json.body.url,\n  page_urls: $('Webhook: Edit Competitor').first().json.body.page_urls,\n  fresh_baseline_started: $('Compare Competitor Changes').first().json.urls_changed\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1792,
+        80
+      ],
+      "id": "5543aee1-062b-4156-a2ba-602d866840f2",
+      "name": "Respond: Edit Competitor"
+    },
+    {
+      "parameters": {
+        "jsCode": "const existing = $json;\n\nconst webhook = $('Webhook: Edit Competitor').first().json;\nconst body = webhook.body ?? webhook;\n\nfunction normalizeUrl(value) {\n  let url = String(value ?? '').trim();\n\n  // Ignore an unnecessary trailing slash when comparing.\n  if (url.endsWith('/') && url.split('/').length > 3) {\n    url = url.slice(0, -1);\n  }\n\n  return url;\n}\n\nfunction normalizePageUrls(values) {\n  return (Array.isArray(values) ? values : [])\n    .map(normalizeUrl)\n    .filter(Boolean)\n    .sort();\n}\n\nconst submittedName = String(body.name ?? '').trim();\nconst submittedUrl = normalizeUrl(body.url);\nconst submittedPageUrls = normalizePageUrls(body.page_urls);\n\nif (!submittedName) {\n  throw new Error('Competitor name is required.');\n}\n\nif (!submittedUrl) {\n  throw new Error('Competitor URL is required.');\n}\n\nif (\n  submittedPageUrls.length < 1 ||\n  submittedPageUrls.length > 3\n) {\n  throw new Error('page_urls must contain between 1 and 3 URLs.');\n}\n\nconst oldUrl = normalizeUrl(existing.url);\nconst oldPageUrls = normalizePageUrls(existing.page_urls);\n\nconst nameChanged = submittedName !== existing.name;\n\nconst urlsChanged =\n  submittedUrl !== oldUrl ||\n  JSON.stringify(submittedPageUrls) !== JSON.stringify(oldPageUrls);\n\nreturn [\n  {\n    json: {\n      competitor_id: existing.id,\n      business_id: existing.business_id,\n\n      old_name: existing.name,\n      old_url: existing.url,\n      old_page_urls: existing.page_urls,\n\n      name: submittedName,\n      url: submittedUrl,\n      page_urls: submittedPageUrls,\n\n      name_changed: nameChanged,\n      urls_changed: urlsChanged,\n      needs_fresh_baseline: urlsChanged,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        80
+      ],
+      "id": "dddfec49-1414-4d69-9654-ac1fa9460972",
+      "name": "Compare Competitor Changes"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1bb2c87a-7486-4ea8-a53a-dceba2aca922",
+              "leftValue": "={{ $json.urls_changed }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        80
+      ],
+      "id": "b149cb54-14ce-47ef-a4bb-974091396056",
+      "name": "URLs Changed?"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "<<SUPABASE_URL>>/rest/v1/competitors",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{'eq.' + $json.competitor_id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "=return=representation"
+            },
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  name: $json.name,\n  url: $json.url,\n  page_urls: $json.page_urls\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1568,
+        176
+      ],
+      "id": "243d935a-b716-451e-9603-a713cc016711",
+      "name": "Update Competitor"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "<<SUPABASE_URL>>/rest/v1/signals",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "competitor_id",
+              "value": "={{ 'eq.' + $('Webhook: Edit Competitor').first().json.body.competitor_id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        896,
+        -16
+      ],
+      "id": "0c602389-389c-4547-b4ad-d5af657f19de",
+      "name": "Delete Old Signals"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "<<SUPABASE_URL>>/rest/v1/snapshots",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "competitor_id",
+              "value": "={{ 'eq.' + $('Webhook: Edit Competitor').first().json.body.competitor_id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1120,
+        -16
+      ],
+      "id": "efba6540-6556-4269-84d1-0bfc435ffa5b",
+      "name": "Delete Old Snapshots"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "<<SUPABASE_URL>>/rest/v1/competitors",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ 'eq.' + $('Webhook: Edit Competitor').first().json.body.competitor_id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Prefer",
+              "value": "=return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  name: $('Webhook: Edit Competitor').first().json.body.name,\n  url: $('Webhook: Edit Competitor').first().json.body.url,\n  page_urls: $('Webhook: Edit Competitor').first().json.body.page_urls,\n  status: 'pending',\n  last_checked_at: null,\n  last_error: null\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1344,
+        -16
+      ],
+      "id": "21b3eeeb-6558-4a6a-b095-35f84bda71ee",
+      "name": "Update Competitor for Fresh Baseline"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://akalmeher.app.n8n.cloud/webhook/rescan",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  competitor_id: $('Webhook: Edit Competitor').first().json.body.competitor_id\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1568,
+        -16
+      ],
+      "id": "49feb541-dc08-4ad4-869f-badf4e3be952",
+      "name": "Trigger Fresh Baseline Scan"
+    },
+    {
+      "parameters": {
+        "httpMethod": "DELETE",
+        "path": "=remove-competitor",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -256
+      ],
+      "id": "5e1d3642-00b3-4f8f-9b7f-5d022e8091e8",
+      "name": "Webhook: Remove Competitor",
+      "webhookId": "b599f99f-69ca-4b07-b6f4-b7147090a6a3"
+    },
+    {
+      "parameters": {
+        "url": "<<SUPABASE_URL>>/rest/v1/competitors",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ 'eq.' + $('Webhook: Remove Competitor').first().json.body.competitor_id }}"
+            },
+            {
+              "name": "select",
+              "value": "=id,business_id,name,url,status"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        -256
+      ],
+      "id": "280bba28-631a-497b-acd5-a3ce11c8a26f",
+      "name": "Load Competitor to Remove"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "<<SUPABASE_URL>>/rest/v1/competitors",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ 'eq.' + $('Webhook: Remove Competitor').first().json.body.competitor_id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Prefer",
+              "value": "=return=representation"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        -256
+      ],
+      "id": "5b7bd1de-83bc-4216-94ef-457fa936dfe9",
+      "name": "Delete Competitor"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  success: true,\n  competitor_id: $('Webhook: Remove Competitor').first().json.body.competitor_id,\n  name: $('Load Competitor to Remove').first().json.name,\n  message: 'Competitor removed successfully.'\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        672,
+        -256
+      ],
+      "id": "0d8a905a-a6bb-4c99-a0aa-d34429d198f1",
+      "name": "Respond: Remove Competitor"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook: Edit Competitor": {
+      "main": [
+        [
+          {
+            "node": "Load Existing Competitor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Existing Competitor": {
+      "main": [
+        [
+          {
+            "node": "Compare Competitor Changes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Competitor Changes": {
+      "main": [
+        [
+          {
+            "node": "URLs Changed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "URLs Changed?": {
+      "main": [
+        [
+          {
+            "node": "Delete Old Signals",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Competitor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Competitor": {
+      "main": [
+        [
+          {
+            "node": "Respond: Edit Competitor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Old Signals": {
+      "main": [
+        [
+          {
+            "node": "Delete Old Snapshots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Old Snapshots": {
+      "main": [
+        [
+          {
+            "node": "Update Competitor for Fresh Baseline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Competitor for Fresh Baseline": {
+      "main": [
+        [
+          {
+            "node": "Trigger Fresh Baseline Scan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Fresh Baseline Scan": {
+      "main": [
+        [
+          {
+            "node": "Respond: Edit Competitor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Remove Competitor": {
+      "main": [
+        [
+          {
+            "node": "Load Competitor to Remove",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Competitor to Remove": {
+      "main": [
+        [
+          {
+            "node": "Delete Competitor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Competitor": {
+      "main": [
+        [
+          {
+            "node": "Respond: Remove Competitor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2fe07f0e-2798-4389-a267-b4a5725e9de7",
+  "meta": {
+    "instanceId": "c4e5f8858e863aadae589024fcfd9ee484237f74cc6930cb48db5113ba392030"
+  },
+  "nodeGroups": [],
+  "id": "wnmDRVBZh4Obcuo4",
+  "tags": []
+}

@@ -1,12 +1,13 @@
 # n8n contract
 
-n8n owns every database write and uses the Supabase **service_role** key. This repo exports three production workflows. Import all of them; this document is the contract they satisfy.
+n8n owns every database write and uses the Supabase **service_role** key. This repo exports four production workflows. Import all of them; this document is the contract they satisfy.
 
 | File | Role |
 | --- | --- |
 | `competitor-radar-scan.json` | Scheduled and on-demand competitor website monitoring, change detection, AI analysis, snapshots and signals. |
 | `competitor-radar-discover-nearby.json` | Address geocoding plus Apify Google Maps nearby competitor discovery. |
 | `competitor-radar-rescan-all.json` | Re-scans all eligible competitors **sequentially** so concurrent Apify crawls do not hit memory limits. |
+| `competitor-radar-manage-competitor.json` | Edits and removes monitored competitors, preserving history for name-only edits and rebuilding the baseline when monitored URLs change. |
 
 Exported JSON contains placeholder credentials, not real secrets. After import, replace the tokens inside n8n (see [Placeholders after import](#placeholders-after-import)). Do not commit filled copies.
 
@@ -83,17 +84,42 @@ It does not duplicate crawl, LLM, or snapshot logic — it only serializes calls
 
 ---
 
+## `competitor-radar-manage-competitor.json`
+
+Competitor management workflow. All writes go through n8n with the Supabase service_role key.
+
+**`PATCH /webhook/edit-competitor`** — payload `{ competitor_id, name, url, page_urls[] }`.
+
+Behavior:
+1. Load the existing competitor.
+2. Compare the submitted URL and monitored page URLs with the stored values.
+3. If only the name changes, update the competitor while preserving snapshots and signals.
+4. If `url` or `page_urls` changes:
+   - delete the competitor's old signals;
+   - delete the competitor's old snapshots;
+   - update the competitor with the new values;
+   - reset status to `pending`;
+   - clear `last_checked_at` and `last_error`;
+   - trigger `POST /webhook/rescan` to establish a fresh baseline.
+5. Respond with whether a fresh baseline scan was started.
+
+**`DELETE /webhook/remove-competitor`** — payload `{ competitor_id }`.
+
+Loads the competitor, deletes the competitor row, and returns a confirmation response. The database foreign keys use `ON DELETE CASCADE`, so associated snapshots and signals are removed automatically.
+
+---
+
 ## Placeholders after import
 
 Search each imported workflow for `<<` and replace every token in the n8n editor. Typical placeholders:
 
 | Placeholder | Used by | What to put there |
 | --- | --- | --- |
-| `<<SUPABASE_SERVICE_ROLE_KEY>>` | scan, rescan-all | Supabase **service_role** key (not the anon key) |
+| `<<SUPABASE_SERVICE_ROLE_KEY>>` | scan, rescan-all, manage-competitor | Supabase **service_role** key (not the anon key) |
 | `<<APIFY_API_TOKEN>>` | scan, discover-nearby | Apify API token |
 | `<<OPENAI_API_KEY>>` | scan | OpenAI API key |
 | `<<GOOGLE_MAPS_API_KEY>>` | discover-nearby | Google Maps Geocoding API key |
 
-The scan workflow also uses `<<SUPABASE_URL>>` (`https://<project-ref>.supabase.co`, no trailing slash).
+The scan and manage-competitor workflows also use `<<SUPABASE_URL>>` (`https://<project-ref>.supabase.co`, no trailing slash).
 
 There are no n8n credential objects in the exported JSON, so the placeholders are the configuration step. Do not add real credentials to the repo.

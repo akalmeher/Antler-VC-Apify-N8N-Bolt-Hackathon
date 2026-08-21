@@ -65,6 +65,8 @@ interface RadarContextValue {
   rescanAllCooldown: boolean;
   startRescanAll: () => Promise<void>;
   clearRescanAll: () => void;
+  refreshWatchlist: () => Promise<Competitor[]>;
+  watchScan: (competitorId: string, options?: { freshBaseline?: boolean }) => void;
 }
 
 const RadarContext = createContext<RadarContextValue | null>(null);
@@ -140,7 +142,8 @@ export function RadarProvider({ children }: { children: ReactNode }) {
   const clearAddScan = useCallback(() => setAddScan(null), []);
 
   const pollUntilSettled = useCallback(
-    (id: string) => {
+    (id: string, options?: { freshBaseline?: boolean }) => {
+      const freshBaseline = options?.freshBaseline === true;
       const baseline = signalsRef.current.filter((s) => s.competitor_id === id).length;
       setScanStates((prev) => ({
         ...prev,
@@ -181,13 +184,14 @@ export function RadarProvider({ children }: { children: ReactNode }) {
           }
           const fresh = await fetchSignals();
           setSignals(fresh);
-          const newCount = fresh.filter((s) => s.competitor_id === id).length;
+          const doneMessage = freshBaseline
+            ? 'Fresh baseline established. Monitoring will continue from here.'
+            : fresh.filter((s) => s.competitor_id === id).length > baseline
+              ? 'Scan finished. New signals are in your feed.'
+              : 'Scan finished. No meaningful changes since last time.';
           setScanStates((prev) => ({
             ...prev,
-            [id]:
-              newCount > baseline
-                ? { phase: 'done', message: 'Scan finished. New signals are in your feed.' }
-                : { phase: 'done', message: 'Scan finished. No meaningful changes since last time.' },
+            [id]: { phase: 'done', message: doneMessage },
           }));
         } catch {
           // transient read error — keep polling until timeout
@@ -348,6 +352,8 @@ export function RadarProvider({ children }: { children: ReactNode }) {
     rescanAllCooldown,
     startRescanAll,
     clearRescanAll,
+    refreshWatchlist,
+    watchScan: pollUntilSettled,
   };
 
   return <RadarContext.Provider value={value}>{children}</RadarContext.Provider>;

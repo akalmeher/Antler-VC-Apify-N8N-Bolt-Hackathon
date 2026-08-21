@@ -104,3 +104,30 @@ export interface DiscoverNearbyResponse {
   count: number;
   competitors: NearbyCompetitor[];
 }
+
+export interface EditCompetitorRequest {
+  competitor_id: string;
+  name: string;
+  url: string;
+  page_urls: string[];
+}
+
+export interface EditCompetitorResponse {
+  success: boolean;
+  competitor_id: string;
+  name: string;
+  url: string;
+  page_urls: string[];
+  fresh_baseline_started: boolean;
+}
+
+export interface RemoveCompetitorRequest {
+  competitor_id: string;
+}
+
+export interface RemoveCompetitorResponse {
+  success: boolean;
+  competitor_id: string;
+  name: string;
+  message: string;
+}

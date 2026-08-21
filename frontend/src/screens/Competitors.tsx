@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ExternalLink, RefreshCw, Store, AlertTriangle, Clock, Zap, ArrowRight, Sparkles, MapPin } from 'lucide-react';
+import { ExternalLink, RefreshCw, Store, AlertTriangle, Clock, Zap, ArrowRight, Sparkles, MapPin, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { useRadar } from '@/lib/RadarContext';
 import { useNav } from '@/lib/nav';
 import { useUi } from '@/lib/UiContext';
@@ -20,27 +20,52 @@ import { ScanNotice } from '@/components/ScanNotice';
 import { SectionHeader } from '@/components/SectionHeader';
 import { LocationContext } from '@/components/LocationContext';
 import { RescanAllModal } from '@/components/RescanAllModal';
+import { EditCompetitorModal } from '@/components/EditCompetitorModal';
+import { RemoveCompetitorModal } from '@/components/RemoveCompetitorModal';
 import type { Competitor, SignalWithCompetitor } from '@/lib/types';
 
 function CompetitorCard({
   competitor,
   signals,
   onRescan,
+  onEdit,
+  onRemove,
 }: {
   competitor: Competitor;
   signals: SignalWithCompetitor[];
   onRescan: (id: string) => Promise<void>;
+  onEdit: (competitor: Competitor) => void;
+  onRemove: (competitor: Competitor) => void;
 }) {
   const { scanStates, clearScanState } = useRadar();
   const { openCompetitor } = useUi();
   const [submitting, setSubmitting] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const scan = scanStates[competitor.id];
   const isScanning = competitor.status === 'scanning' || submitting;
+  const cannotRemove = competitor.status === 'scanning';
   const distance = competitorDistance(competitor);
   const address = competitorAddress(competitor);
   const complaint = pickComplaint(signals);
   const change = pickBiggestChange(signals);
   const opportunity = pickTopOpportunity(signals);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointer = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    window.addEventListener('mousedown', onPointer);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('mousedown', onPointer);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
 
   const handleRescan = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -82,14 +107,73 @@ function CompetitorCard({
             </p>
           )}
         </div>
-        <button
-          onClick={handleRescan}
-          disabled={isScanning}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-border bg-surface px-3 py-2 text-xs font-semibold text-navy transition-colors duration-220 hover:bg-ink-bg disabled:opacity-50"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${isScanning ? 'animate-spin' : ''}`} />
-          {isScanning ? 'Scanning…' : 'Re-scan'}
-        </button>
+        <div className="flex shrink-0 items-start gap-2">
+          <button
+            onClick={handleRescan}
+            disabled={isScanning}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-border bg-surface px-3 py-2 text-xs font-semibold text-navy transition-colors duration-220 hover:bg-ink-bg disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isScanning ? 'animate-spin' : ''}`} />
+            {isScanning ? 'Scanning…' : 'Re-scan'}
+          </button>
+          <div ref={menuRef} className="relative">
+            <button
+              type="button"
+              aria-label="Competitor actions"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((open) => !open);
+              }}
+              className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-xl border border-ink-border bg-surface text-navy transition-colors duration-220 hover:bg-ink-bg"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+            {menuOpen && (
+              <div
+                role="menu"
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 z-20 mt-1.5 w-48 overflow-hidden rounded-xl border border-ink-border bg-surface py-1 shadow-soft"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                    onEdit(competitor);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-navy transition-colors duration-220 hover:bg-ink-bg"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-muted" />
+                  Edit competitor
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={cannotRemove}
+                  title={
+                    cannotRemove
+                      ? 'Wait for the current scan to finish before removing this competitor.'
+                      : undefined
+                  }
+                  aria-disabled={cannotRemove}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (cannotRemove) return;
+                    setMenuOpen(false);
+                    onRemove(competitor);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-semantic-threat transition-colors duration-220 hover:bg-semantic-threatBg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Remove competitor
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {competitor.status === 'error' && competitor.last_error && (
@@ -187,6 +271,8 @@ export function Competitors() {
     rescanAllCooldown,
     startRescanAll,
     clearRescanAll,
+    refreshWatchlist,
+    watchScan,
   } = useRadar();
   const { navigate } = useNav();
 
@@ -194,6 +280,8 @@ export function Competitors() {
   const [rescanModalOpen, setRescanModalOpen] = useState(false);
   const [startingRescanAll, setStartingRescanAll] = useState(false);
   const submittingRescanAll = useRef(false);
+  const [editingCompetitor, setEditingCompetitor] = useState<Competitor | null>(null);
+  const [removingCompetitor, setRemovingCompetitor] = useState<Competitor | null>(null);
 
   const batchBusy = startingRescanAll || rescanAll?.phase === 'running';
 
@@ -318,6 +406,8 @@ export function Competitors() {
                 competitor={c}
                 signals={byCompetitor.get(c.id) ?? []}
                 onRescan={startRescan}
+                onEdit={setEditingCompetitor}
+                onRemove={setRemovingCompetitor}
               />
             </div>
           ))}
@@ -341,6 +431,31 @@ export function Competitors() {
             setRescanModalOpen(false);
             clearRescanAll();
             navigate('signals');
+          }}
+        />
+      )}
+      {editingCompetitor && (
+        <EditCompetitorModal
+          competitor={editingCompetitor}
+          isOpen
+          onClose={() => setEditingCompetitor(null)}
+          onSaved={async (result) => {
+            setEditingCompetitor(null);
+            await refreshWatchlist();
+            if (result.fresh_baseline_started) {
+              watchScan(result.competitor_id, { freshBaseline: true });
+            }
+          }}
+        />
+      )}
+      {removingCompetitor && (
+        <RemoveCompetitorModal
+          competitor={removingCompetitor}
+          isOpen
+          onClose={() => setRemovingCompetitor(null)}
+          onRemoved={async () => {
+            setRemovingCompetitor(null);
+            await refreshWatchlist();
           }}
         />
       )}

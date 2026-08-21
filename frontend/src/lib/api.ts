@@ -5,6 +5,9 @@ import type {
   Competitor,
   DiscoverNearbyRequest,
   DiscoverNearbyResponse,
+  EditCompetitorRequest,
+  EditCompetitorResponse,
+  RemoveCompetitorResponse,
   RescanAllResponse,
   SignalWithCompetitor,
 } from '@/lib/types';
@@ -60,9 +63,13 @@ async function postWebhook(path: string, body: Record<string, unknown>): Promise
   }
 }
 
-async function postWebhookJson<T>(path: string, body: Record<string, unknown>): Promise<T> {
+async function webhookJson<T>(
+  path: string,
+  body: Record<string, unknown>,
+  method: 'POST' | 'PATCH' | 'DELETE',
+): Promise<T> {
   const res = await fetch(`${N8N_WEBHOOK_BASE_URL}${path}`, {
-    method: 'POST',
+    method,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
@@ -74,6 +81,10 @@ async function postWebhookJson<T>(path: string, body: Record<string, unknown>): 
   } catch {
     throw new Error('The scan service returned an unreadable response. Please try again.');
   }
+}
+
+async function postWebhookJson<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  return webhookJson<T>(path, body, 'POST');
 }
 
 export async function requestAddCompetitor(input: {
@@ -114,4 +125,25 @@ export async function discoverNearbyCompetitors(
     ...data,
     competitors: data.competitors ?? [],
   };
+}
+
+export async function editCompetitor(input: EditCompetitorRequest): Promise<EditCompetitorResponse> {
+  return webhookJson<EditCompetitorResponse>(
+    '/webhook/edit-competitor',
+    {
+      competitor_id: input.competitor_id,
+      name: input.name,
+      url: input.url,
+      page_urls: input.page_urls,
+    },
+    'PATCH',
+  );
+}
+
+export async function removeCompetitor(competitorId: string): Promise<RemoveCompetitorResponse> {
+  return webhookJson<RemoveCompetitorResponse>(
+    '/webhook/remove-competitor',
+    { competitor_id: competitorId },
+    'DELETE',
+  );
 }

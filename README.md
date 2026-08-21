@@ -10,38 +10,64 @@ Restaurants are the only supported vertical in the MVP.
 
 The end-to-end backend pipeline has been validated: real competitor baseline scanning works on El Chilito, controlled change detection works on Media Luna, and signals are successfully stored in Supabase.
 
+Production n8n also supports nearby competitor discovery (address geocoding + Google Maps) and a sequential re-scan-all path so a full watchlist can be refreshed without overlapping Apify crawls.
+
 ## Architecture
 
-- **Bolt frontend** (built elsewhere, not in this repo) — reads Supabase directly with the anon key, calls n8n webhooks to trigger work.
-- **n8n** — owns all database writes using the service_role key, orchestrates every scan.
-- **Apify** — crawls the competitor pages via `apify/website-content-crawler`.
+- **Frontend** (`frontend/`) — reads Supabase directly with the anon key, calls n8n webhooks to trigger work.
+- **n8n** — owns all database writes using the service_role key, orchestrates scans and discovery.
+- **Apify** — crawls competitor websites via `apify/website-content-crawler`, and discovers nearby businesses via `compass/crawler-google-places`.
+- **Google Maps Geocoding** — turns a business address into coordinates for nearby discovery.
 - **Supabase** — Postgres, RLS on, read-only to the frontend.
 
 ```mermaid
 flowchart LR
-  Bolt -->|webhook| n8n
-  n8n -->|crawl| Apify
-  Apify -->|markdown| n8n
+  Frontend -->|webhook| n8n
+  n8n -->|geocode| GoogleMaps
+  n8n -->|crawl / discover| Apify
+  Apify -->|markdown / places| n8n
   n8n -->|writes| Supabase
-  Supabase -->|reads| Bolt
+  Supabase -->|reads| Frontend
 ```
+
+## n8n workflows
+
+Import all three JSON files into n8n. They ship with placeholder tokens instead of secrets — configure those values inside n8n after import. Do not commit filled copies.
+
+| File | What it does |
+| --- | --- |
+| `n8n/competitor-radar-scan.json` | Scheduled and on-demand competitor website monitoring: crawl, change detection, AI analysis, snapshots and signals. Webhooks: `POST /webhook/add-competitor`, `POST /webhook/rescan`. |
+| `n8n/competitor-radar-discover-nearby.json` | Address geocoding plus Apify Google Maps nearby competitor discovery. Webhook: `POST /webhook/discover-nearby`. |
+| `n8n/competitor-radar-rescan-all.json` | Safely re-scans all eligible competitors sequentially to avoid concurrent Apify memory-limit failures. Webhook: `POST /webhook/rescan-all`. |
+
+Placeholder credentials in the exported workflows include:
+
+- `<<SUPABASE_SERVICE_ROLE_KEY>>`
+- `<<APIFY_API_TOKEN>>`
+- `<<OPENAI_API_KEY>>`
+- `<<GOOGLE_MAPS_API_KEY>>`
+
+The scan workflow also uses `<<SUPABASE_URL>>`. See `n8n/README.md` for the contract each workflow satisfies.
 
 ## Setup
 
 1. Create a Supabase project.
 2. Run `supabase/schema.sql` in the SQL editor.
 3. Run `supabase/seed.sql` for the demo business and competitor.
-4. Import `n8n/workflow.json` into n8n and add the credentials listed in `n8n/README.md` (Supabase service_role, Apify, OpenAI).
+4. Import the three workflows under `n8n/` into n8n and replace the placeholder credentials listed above (and in `n8n/README.md`).
 5. Copy `.env.example` and fill in the values.
 
 ## Layout
 
 ```
-supabase/schema.sql                     tables, indexes, RLS
-supabase/seed.sql                       demo business + competitors
-demo-site/index.html                    fake competitor page we edit live on stage
-n8n/workflow.json                       importable n8n scan workflow
-n8n/README.md                           webhook and scan contract
-apify/website-content-crawler-input.json  actor input template
-docs/bolt-handoff.md                    what the frontend needs
+supabase/schema.sql                          tables, indexes, RLS
+supabase/seed.sql                            demo business + competitors
+demo-site/index.html                         fake competitor page we edit live on stage
+frontend/                                    Vite app that reads Supabase and calls n8n webhooks
+n8n/competitor-radar-scan.json               website monitoring, change detection, AI signals
+n8n/competitor-radar-discover-nearby.json    address geocoding + nearby Google Maps discovery
+n8n/competitor-radar-rescan-all.json         sequential re-scan of the full watchlist
+n8n/README.md                                webhook and scan contract
+apify/website-content-crawler-input.json     actor input template
+docs/bolt-handoff.md                         what the frontend needs
 ```

@@ -92,6 +92,10 @@ export default {
           from: { opacity: '0', transform: 'translateY(6px) scale(0.985)' },
           to: { opacity: '1', transform: 'translateY(0) scale(1)' },
         },
+        'pulse-soft': {
+          '0%, 100%': { opacity: '0.55', transform: 'scale(0.99)' },
+          '50%': { opacity: '1', transform: 'scale(1.01)' },
+        },
       },
       animation: {
         rise: 'rise 260ms ease-out both',
@@ -99,6 +103,7 @@ export default {
         'drawer-in': 'drawer-in 260ms ease-out both',
         'text-in': 'textIn 280ms ease-out both',
         'modal-in': 'modal-in 220ms ease-out both',
+        'pulse-soft': 'pulse-soft 2200ms ease-in-out infinite',
       },
     },
   },

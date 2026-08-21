@@ -1,0 +1,193 @@
+{
+  "name": "Competitor Radar - Discover Nearby",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "=discover-nearby",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c5634bd9-c786-467b-bc6c-79c895698387",
+      "name": "Webhook: Discover Nearby",
+      "webhookId": "03cd2928-b2bb-4f22-821c-af62c78ed1c4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhook = $('Webhook: Discover Nearby').first().json;\nconst body = webhook.body ?? webhook;\n\nconst geocode = $('Google: Geocode Address').first().json;\n\nconst radiusMiles = Number(body.radius_miles ?? 3);\nconst searchTerm = body.search_term || 'restaurant';\n\nif (!Number.isFinite(radiusMiles) || radiusMiles <= 0) {\n  throw new Error('radius_miles must be greater than 0');\n}\n\n// Prefer coordinates returned by Google Geocoding.\n// Fall back to latitude/longitude supplied directly in the webhook.\nlet latitude;\nlet longitude;\n\nif (\n  geocode.status === 'OK' &&\n  Array.isArray(geocode.results) &&\n  geocode.results.length > 0\n) {\n  latitude = Number(geocode.results[0].geometry?.location?.lat);\n  longitude = Number(geocode.results[0].geometry?.location?.lng);\n} else {\n  latitude = Number(body.latitude);\n  longitude = Number(body.longitude);\n}\n\nif (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {\n  throw new Error(\n    'Could not resolve the business location. Provide a valid address or latitude/longitude.'\n  );\n}\n\nconst radiusKm = radiusMiles * 1.60934;\n\nreturn [\n  {\n    json: {\n      business_name: body.business_name ?? null,\n      address: body.address ?? null,\n      latitude,\n      longitude,\n      radius_miles: radiusMiles,\n\n      apify_input: {\n        searchStringsArray: [searchTerm],\n        customGeolocation: {\n          type: 'Point',\n          coordinates: [\n            longitude,\n            latitude\n          ],\n          radiusKm\n        },\n        maxCrawledPlacesPerSearch: 20,\n        language: 'en'\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "c4a67900-2423-44c4-a854-dfcc32f1b050",
+      "name": "Build Apify Input"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <<APIFY_API_TOKEN>>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.apify_input }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        672,
+        0
+      ],
+      "id": "00fc661b-d2a3-421c-aa2b-c7ad70d967bc",
+      "name": "Apify: Discover Nearby Competitors"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Handle either:\n// 1. Apify results already split into n8n items\n// 2. One item containing an array\nconst places = items.flatMap(item => {\n  const data = item.json;\n\n  if (Array.isArray(data)) return data;\n  if (Array.isArray(data.body)) return data.body;\n\n  return [data];\n});\n\n// Original search coordinates from our earlier node\nconst request = $('Build Apify Input').first().json;\n\nconst center =\n  request.apify_input?.customGeolocation?.coordinates ?? [];\n\nconst centerLng = Number(center[0]);\nconst centerLat = Number(center[1]);\n\nfunction distanceMiles(lat1, lng1, lat2, lng2) {\n  if (![lat1, lng1, lat2, lng2].every(Number.isFinite)) {\n    return null;\n  }\n\n  const R = 3958.8;\n\n  const toRad = deg => deg * Math.PI / 180;\n\n  const dLat = toRad(lat2 - lat1);\n  const dLng = toRad(lng2 - lng1);\n\n  const a =\n    Math.sin(dLat / 2) ** 2 +\n    Math.cos(toRad(lat1)) *\n      Math.cos(toRad(lat2)) *\n      Math.sin(dLng / 2) ** 2;\n\n  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));\n}\n\nconst results = places\n  // Don't show closed businesses\n  .filter(place =>\n    !place.permanentlyClosed &&\n    !place.temporarilyClosed\n  )\n  .map(place => {\n    const lat = Number(place.location?.lat);\n    const lng = Number(place.location?.lng);\n\n    const distance = distanceMiles(\n      centerLat,\n      centerLng,\n      lat,\n      lng\n    );\n\n    return {\n      name: place.title ?? null,\n      category: place.categoryName ?? null,\n\n      address: place.address ?? null,\n      neighborhood: place.neighborhood ?? null,\n\n      website: place.website ?? null,\n      google_maps_url: place.url ?? null,\n\n      latitude: Number.isFinite(lat) ? lat : null,\n      longitude: Number.isFinite(lng) ? lng : null,\n\n      distance_miles:\n        distance !== null\n          ? Number(distance.toFixed(2))\n          : null,\n\n      rating:\n        typeof place.totalScore === 'number'\n          ? place.totalScore\n          : null,\n\n      reviews_count:\n        typeof place.reviewsCount === 'number'\n          ? place.reviewsCount\n          : 0,\n\n      price: place.price ?? null,\n\n      image_url: place.imageUrl ?? null,\n\n      opening_hours: Array.isArray(place.openingHours)\n        ? place.openingHours\n        : [],\n\n      place_id: place.placeId ?? null,\n\n      can_monitor: Boolean(place.website)\n    };\n  })\n  .sort((a, b) => {\n    if (a.distance_miles === null) return 1;\n    if (b.distance_miles === null) return -1;\n\n    return a.distance_miles - b.distance_miles;\n  });\n\nreturn [\n  {\n    json: {\n      business_name: request.business_name,\n      radius_miles: request.radius_miles,\n      count: results.length,\n      competitors: results\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ],
+      "id": "a84e2b25-b3f3-41f2-bf54-e3046f484462",
+      "name": "Normalize Nearby Results"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "044742e3-dd38-4668-8d0e-784d796cb7aa",
+      "name": "Respond: Nearby Competitors"
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/geocode/json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "address",
+              "value": "={{ $('Webhook: Discover Nearby').first().json.body.address }}"
+            },
+            {
+              "name": "key",
+              "value": "<<GOOGLE_MAPS_API_KEY>>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "78eab326-b554-4be9-bd6c-46c654838347",
+      "name": "Google: Geocode Address"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook: Discover Nearby": {
+      "main": [
+        [
+          {
+            "node": "Google: Geocode Address",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Apify Input": {
+      "main": [
+        [
+          {
+            "node": "Apify: Discover Nearby Competitors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Discover Nearby Competitors": {
+      "main": [
+        [
+          {
+            "node": "Normalize Nearby Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Nearby Results": {
+      "main": [
+        [
+          {
+            "node": "Respond: Nearby Competitors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google: Geocode Address": {
+      "main": [
+        [
+          {
+            "node": "Build Apify Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f031975e-192a-4ede-93c4-cd9cece29bcf",
+  "meta": {
+    "instanceId": "c4e5f8858e863aadae589024fcfd9ee484237f74cc6930cb48db5113ba392030"
+  },
+  "nodeGroups": [],
+  "id": "elfyOloIFg76T1Xw",
+  "tags": []
+}

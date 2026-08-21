@@ -1,13 +1,13 @@
 # Competitor Radar — LLM prompts
 
-This file is the source of truth for the prompt text used by `n8n/workflow.json`. The same
+This file is the source of truth for the prompt text used by `n8n/competitor-radar-scan.json`. The same
 strings are embedded in the workflow's **Build Baseline Prompt** and **Build Change Prompt**
 Code nodes so that a fresh import needs no extra wiring. If you edit a prompt here, paste the
 change into the matching Code node.
 
 ## Placeholders to fill after import
 
-`n8n/workflow.json` ships with literal placeholder tokens instead of secrets. Find and replace
+`n8n/competitor-radar-scan.json` ships with literal placeholder tokens instead of secrets. Find and replace
 every one of these after importing the workflow, then **do not commit the filled file** — it will
 contain a service-role key that bypasses Row Level Security and an OpenAI key that costs money.
 Fill them in the n8n editor after import, or in a scratch copy outside the repo; the version

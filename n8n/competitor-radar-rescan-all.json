@@ -1,0 +1,317 @@
+{
+  "name": "Competitor Radar - Rescan All",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "=rescan-all",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -144,
+        224
+      ],
+      "id": "a9813469-7e0b-4d28-bda5-82d2d01c2cf7",
+      "name": "Webhook: Rescan All",
+      "webhookId": "25e6bfdf-818e-4cc0-8054-dbfe15d54345"
+    },
+    {
+      "parameters": {
+        "url": "https://khvuvmzoikjewghdzzgy.supabase.co/rest/v1/competitors",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "business_id",
+              "value": "={{ 'eq.' + $('Webhook: Rescan All').first().json.body.business_id }}"
+            },
+            {
+              "name": "status",
+              "value": "=in.(active,error)"
+            },
+            {
+              "name": "select",
+              "value": "=id,name,url,page_urls,status"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        80,
+        224
+      ],
+      "id": "658bad64-b63d-4a5f-8ad0-20593d40b590",
+      "name": "Load Active Competitors"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        528,
+        224
+      ],
+      "id": "d1533aca-f692-4ac3-b32d-7d58cee131f3",
+      "name": "Loop Competitors"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://akalmeher.app.n8n.cloud/webhook/rescan",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"competitor_id\": \"{{ $json.id }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        752,
+        160
+      ],
+      "id": "1dc93424-416d-439a-b048-e568ea6a094a",
+      "name": "Rescan Competitor"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        976,
+        160
+      ],
+      "id": "2c307da9-99c7-4de7-9d3c-7fb17fb04204",
+      "name": "Wait",
+      "webhookId": "c4a98f96-1cfc-404f-9b99-466d78d612f7"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  accepted: true,\n  queued_count: $('Load Active Competitors').all().length,\n  started_at: new Date().toISOString(),\n  message: `Re-scan started for ${$('Load Active Competitors').all().length} competitors.`\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        304,
+        224
+      ],
+      "id": "6747ac7f-d2d7-46fc-a2c7-cc8700d5a913",
+      "name": "Respond: Rescan All"
+    },
+    {
+      "parameters": {
+        "url": "https://khvuvmzoikjewghdzzgy.supabase.co/rest/v1/competitors",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ 'eq.' + $('Loop Competitors').item.json.id }}"
+            },
+            {
+              "name": "select",
+              "value": "id,name,status,last_checked_at,last_error"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "<<SUPABASE_SERVICE_ROLE_KEY>>"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer <<SUPABASE_SERVICE_ROLE_KEY>>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1200,
+        80
+      ],
+      "id": "5b8f804e-f80b-4c89-a753-197e6d4aa171",
+      "name": "Check Competitor Status"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b19aafc9-4e07-44c1-9a1c-236d0788eab9",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "scanning",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1424,
+        224
+      ],
+      "id": "c58fd809-3a00-4238-b644-ef5be1624206",
+      "name": "Still Scanning?"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook: Rescan All": {
+      "main": [
+        [
+          {
+            "node": "Load Active Competitors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Active Competitors": {
+      "main": [
+        [
+          {
+            "node": "Respond: Rescan All",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Competitors": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Rescan Competitor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rescan Competitor": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Check Competitor Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Competitor Status": {
+      "main": [
+        [
+          {
+            "node": "Still Scanning?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still Scanning?": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Competitors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond: Rescan All": {
+      "main": [
+        [
+          {
+            "node": "Loop Competitors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2db05101-dbc1-4754-82ae-7e105aa6f523",
+  "meta": {
+    "instanceId": "c4e5f8858e863aadae589024fcfd9ee484237f74cc6930cb48db5113ba392030"
+  },
+  "nodeGroups": [],
+  "id": "vJP5dtDLZcdtPQrh",
+  "tags": []
+}

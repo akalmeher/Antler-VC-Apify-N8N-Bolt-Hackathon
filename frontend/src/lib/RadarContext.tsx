@@ -14,11 +14,18 @@ import {
   fetchSignals,
   requestAddCompetitor,
   requestRescan,
+  rescanAllCompetitors,
 } from '@/lib/api';
+import { countCheckedSince } from '@/lib/insights';
 import type { Business, Competitor, SignalWithCompetitor } from '@/lib/types';
 
 const POLL_MS = 3000;
 const MAX_POLLS = 60; // ~3 minutes
+
+const RESCAN_ALL_KEY = '__rescan_all__';
+const RESCAN_ALL_POLL_MS = 5000;
+const MAX_RESCAN_ALL_POLLS = 300; // ~25 minutes; batches run sequentially
+const RESCAN_ALL_COOLDOWN_MS = 60000;
 
 type ScanPhase = 'scanning' | 'done' | 'timeout' | 'error';
 
@@ -31,6 +38,14 @@ export interface AddScanState {
   phase: 'searching' | 'scanning' | 'done' | 'timeout' | 'error';
   message: string;
   competitorId?: string;
+}
+
+export interface RescanAllState {
+  startedAt: string;
+  /** Parsed once so the poller and the UI measure progress against the same instant. */
+  startedAtMs: number;
+  queuedCount: number;
+  phase: 'running' | 'done' | 'timeout';
 }
 
 interface RadarContextValue {
@@ -46,6 +61,10 @@ interface RadarContextValue {
   clearAddScan: () => void;
   startRescan: (competitorId: string) => Promise<void>;
   startAddCompetitor: (input: { name: string; url: string; page_urls: string[] }) => Promise<void>;
+  rescanAll: RescanAllState | null;
+  rescanAllCooldown: boolean;
+  startRescanAll: () => Promise<void>;
+  clearRescanAll: () => void;
 }
 
 const RadarContext = createContext<RadarContextValue | null>(null);
@@ -62,6 +81,9 @@ export function RadarProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [scanStates, setScanStates] = useState<Record<string, ScanState>>({});
   const [addScan, setAddScan] = useState<AddScanState | null>(null);
+  const [rescanAll, setRescanAll] = useState<RescanAllState | null>(null);
+  const [rescanAllCooldown, setRescanAllCooldown] = useState(false);
+  const cooldownTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const signalsRef = useRef<SignalWithCompetitor[]>([]);
   signalsRef.current = signals;
@@ -80,6 +102,7 @@ export function RadarProvider({ children }: { children: ReactNode }) {
     return () => {
       map.forEach((t) => clearInterval(t));
       map.clear();
+      if (cooldownTimer.current) clearTimeout(cooldownTimer.current);
     };
   }, []);
 
@@ -184,6 +207,87 @@ export function RadarProvider({ children }: { children: ReactNode }) {
     [clearScanState, pollUntilSettled],
   );
 
+  const refreshWatchlist = useCallback(async (): Promise<Competitor[]> => {
+    const [list, fresh] = await Promise.all([fetchCompetitors(), fetchSignals()]);
+    setCompetitors(list);
+    setSignals(fresh);
+    return list;
+  }, []);
+
+  const beginRescanAllCooldown = useCallback(() => {
+    setRescanAllCooldown(true);
+    if (cooldownTimer.current) clearTimeout(cooldownTimer.current);
+    cooldownTimer.current = setTimeout(() => setRescanAllCooldown(false), RESCAN_ALL_COOLDOWN_MS);
+  }, []);
+
+  const pollRescanAll = useCallback(
+    (startedAtMs: number, queuedCount: number) => {
+      clearTimer(RESCAN_ALL_KEY);
+      let polls = 0;
+      let inFlight = false;
+
+      const tick = async () => {
+        if (inFlight) return;
+        polls += 1;
+        if (polls > MAX_RESCAN_ALL_POLLS) {
+          clearTimer(RESCAN_ALL_KEY);
+          setRescanAll((prev) => (prev ? { ...prev, phase: 'timeout' } : prev));
+          return;
+        }
+        inFlight = true;
+        try {
+          const list = await refreshWatchlist();
+          if (countCheckedSince(list, startedAtMs) >= queuedCount) {
+            clearTimer(RESCAN_ALL_KEY);
+            setRescanAll((prev) => (prev ? { ...prev, phase: 'done' } : prev));
+            beginRescanAllCooldown();
+          }
+        } catch {
+          // transient read error — keep polling until the cap
+        } finally {
+          inFlight = false;
+        }
+      };
+
+      void tick();
+      const timer = setInterval(() => {
+        void tick();
+      }, RESCAN_ALL_POLL_MS);
+      timers.current.set(RESCAN_ALL_KEY, timer);
+    },
+    [beginRescanAllCooldown, clearTimer, refreshWatchlist],
+  );
+
+  const startRescanAll = useCallback(async () => {
+    if (!business) throw new Error('Your business is still loading. Try again in a moment.');
+
+    const res = await rescanAllCompetitors(business.id);
+    if (!res.accepted) {
+      throw new Error(res.message || 'The scan service did not accept the request. Please try again.');
+    }
+
+    const parsed = new Date(res.started_at).getTime();
+    const startedAtMs = Number.isNaN(parsed) ? Date.now() : parsed;
+    const queuedCount = Math.max(0, res.queued_count);
+
+    setRescanAll({
+      startedAt: res.started_at,
+      startedAtMs,
+      queuedCount,
+      phase: queuedCount === 0 ? 'done' : 'running',
+    });
+    if (queuedCount === 0) {
+      beginRescanAllCooldown();
+    } else {
+      pollRescanAll(startedAtMs, queuedCount);
+    }
+  }, [beginRescanAllCooldown, business, pollRescanAll]);
+
+  const clearRescanAll = useCallback(() => {
+    clearTimer(RESCAN_ALL_KEY);
+    setRescanAll(null);
+  }, [clearTimer]);
+
   const startAddCompetitor = useCallback(
     async (input: { name: string; url: string; page_urls: string[] }) => {
       const before = await fetchCompetitors();
@@ -240,6 +344,10 @@ export function RadarProvider({ children }: { children: ReactNode }) {
     clearAddScan,
     startRescan,
     startAddCompetitor,
+    rescanAll,
+    rescanAllCooldown,
+    startRescanAll,
+    clearRescanAll,
   };
 
   return <RadarContext.Provider value={value}>{children}</RadarContext.Provider>;

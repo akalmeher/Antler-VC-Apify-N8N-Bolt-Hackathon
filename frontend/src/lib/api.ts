@@ -5,6 +5,7 @@ import type {
   Competitor,
   DiscoverNearbyRequest,
   DiscoverNearbyResponse,
+  RescanAllResponse,
   SignalWithCompetitor,
 } from '@/lib/types';
 
@@ -90,6 +91,12 @@ export async function requestAddCompetitor(input: {
 
 export async function requestRescan(competitorId: string): Promise<void> {
   await postWebhook('/webhook/rescan', { competitor_id: competitorId });
+}
+
+export async function rescanAllCompetitors(businessId: string): Promise<RescanAllResponse> {
+  return postWebhookJson<RescanAllResponse>('/webhook/rescan-all', {
+    business_id: businessId,
+  });
 }
 
 export async function discoverNearbyCompetitors(

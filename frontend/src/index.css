@@ -71,4 +71,7 @@ body {
     transform: none;
     transition: none;
   }
+  .animate-pulse-soft {
+    animation: none;
+  }
 }

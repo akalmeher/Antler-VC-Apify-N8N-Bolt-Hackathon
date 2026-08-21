@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ExternalLink, RefreshCw, Store, AlertTriangle, Clock, Zap, ArrowRight, Sparkles, MapPin } from 'lucide-react';
 import { useRadar } from '@/lib/RadarContext';
 import { useNav } from '@/lib/nav';
@@ -7,6 +7,8 @@ import { displayHost, relativeTime } from '@/lib/format';
 import {
   competitorAddress,
   competitorDistance,
+  countCheckedSince,
+  countSignalsSince,
   pickBiggestChange,
   pickComplaint,
   pickTopOpportunity,
@@ -17,6 +19,7 @@ import { EmptyState, ErrorState, Skeleton } from '@/components/States';
 import { ScanNotice } from '@/components/ScanNotice';
 import { SectionHeader } from '@/components/SectionHeader';
 import { LocationContext } from '@/components/LocationContext';
+import { RescanAllModal } from '@/components/RescanAllModal';
 import type { Competitor, SignalWithCompetitor } from '@/lib/types';
 
 function CompetitorCard({
@@ -145,16 +148,16 @@ function CompetitorCard({
 
       <div className="mt-auto pt-4">
         <div className="flex items-center justify-between border-t border-ink-border pb-2 text-xs text-muted">
-        <span className="relative -bottom-3 inline-flex items-center gap-1">
-          <Clock className="h-3.5 w-3.5" />
-          {relativeTime(competitor.last_checked_at)}
-        </span>
-        <span className="relative -bottom-3 inline-flex items-center gap-1 font-semibold text-navy">
-          <Zap className="h-3.5 w-3.5" />
-          {signals.length} signal{signals.length === 1 ? '' : 's'}
-          <ArrowRight className="h-3.5 w-3.5 text-charcoal" />
-        </span>
-      </div>
+          <span className="relative -bottom-3 inline-flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5" />
+            {relativeTime(competitor.last_checked_at)}
+          </span>
+          <span className="relative -bottom-3 inline-flex items-center gap-1 font-semibold text-navy">
+            <Zap className="h-3.5 w-3.5" />
+            {signals.length} signal{signals.length === 1 ? '' : 's'}
+            <ArrowRight className="h-3.5 w-3.5 text-charcoal" />
+          </span>
+        </div>
       </div>
 
       {scan && (
@@ -171,9 +174,64 @@ function CompetitorCard({
 }
 
 export function Competitors() {
-  const { business, competitors, signals, loading, error, startRescan, addScan, clearAddScan } =
-    useRadar();
+  const {
+    business,
+    competitors,
+    signals,
+    loading,
+    error,
+    startRescan,
+    addScan,
+    clearAddScan,
+    rescanAll,
+    rescanAllCooldown,
+    startRescanAll,
+    clearRescanAll,
+  } = useRadar();
   const { navigate } = useNav();
+
+  const [rescanAllError, setRescanAllError] = useState<string | null>(null);
+  const [rescanModalOpen, setRescanModalOpen] = useState(false);
+  const [startingRescanAll, setStartingRescanAll] = useState(false);
+  const submittingRescanAll = useRef(false);
+
+  const batchBusy = startingRescanAll || rescanAll?.phase === 'running';
+
+  useEffect(() => {
+    if (rescanAll?.phase === 'running') {
+      setRescanModalOpen(true);
+    }
+  }, [rescanAll?.phase]);
+
+  const handleRescanAll = async () => {
+    if (submittingRescanAll.current || batchBusy || rescanAllCooldown) return;
+    submittingRescanAll.current = true;
+    setStartingRescanAll(true);
+    setRescanAllError(null);
+    try {
+      await startRescanAll();
+      setRescanModalOpen(true);
+    } catch (err) {
+      setRescanAllError(
+        err instanceof Error ? err.message : 'We could not start the scan. Please try again.',
+      );
+    } finally {
+      submittingRescanAll.current = false;
+      setStartingRescanAll(false);
+    }
+  };
+
+  const progress = useMemo(() => {
+    if (!rescanAll) return null;
+    return {
+      completed: Math.min(
+        countCheckedSince(competitors, rescanAll.startedAtMs),
+        rescanAll.queuedCount,
+      ),
+      newSignals: countSignalsSince(signals, rescanAll.startedAtMs),
+      currentlyChecking: competitors.find((c) => c.status === 'scanning')?.name ?? null,
+    };
+  }, [rescanAll, competitors, signals]);
 
   const byCompetitor = useMemo(() => {
     const map = new Map<string, SignalWithCompetitor[]>();
@@ -206,7 +264,27 @@ export function Competitors() {
         eyebrow="Watchlist"
         title="Mirror, mirror, on the wall… who’s making the biggest move of them all?"
         description="Track the local businesses competing for the same customers, see what they’re changing, and spot the moves that matter most."
+        action={
+          competitors.length > 0 ? (
+            <button
+              onClick={() => void handleRescanAll()}
+              disabled={batchBusy || rescanAllCooldown || !business}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-ink-border bg-surface px-3.5 py-2 text-sm font-semibold text-navy shadow-soft transition-colors duration-220 hover:bg-ink-bg disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${batchBusy ? 'animate-spin' : ''}`} />
+              {batchBusy ? 'Scanning…' : rescanAllCooldown ? 'Recently scanned' : 'Re-scan all'}
+            </button>
+          ) : undefined
+        }
       />
+
+      {rescanAllError && (
+        <ScanNotice
+          phase="error"
+          message={rescanAllError}
+          onDismiss={() => setRescanAllError(null)}
+        />
+      )}
 
       <LocationContext business={business} competitorCount={competitors.length} />
 
@@ -244,6 +322,27 @@ export function Competitors() {
             </div>
           ))}
         </div>
+      )}
+
+      {rescanAll && progress && (
+        <RescanAllModal
+          isOpen={rescanModalOpen}
+          phase={rescanAll.phase}
+          completed={progress.completed}
+          queued={rescanAll.queuedCount}
+          currentlyChecking={progress.currentlyChecking}
+          newSignals={progress.newSignals}
+          onClose={() => setRescanModalOpen(false)}
+          onDone={() => {
+            setRescanModalOpen(false);
+            clearRescanAll();
+          }}
+          onViewSignals={() => {
+            setRescanModalOpen(false);
+            clearRescanAll();
+            navigate('signals');
+          }}
+        />
       )}
     </div>
   );

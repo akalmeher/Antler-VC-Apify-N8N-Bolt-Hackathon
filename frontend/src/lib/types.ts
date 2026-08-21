@@ -91,6 +91,13 @@ export interface DiscoverNearbyRequest {
   longitude?: number;
 }
 
+export interface RescanAllResponse {
+  accepted: boolean;
+  queued_count: number;
+  started_at: string;
+  message: string;
+}
+
 export interface DiscoverNearbyResponse {
   business_name: string;
   radius_miles: number;

@@ -15,6 +15,16 @@ export function competitorAddress(competitor: Competitor): string | null {
   return address ? address : null;
 }
 
+export function countCheckedSince(competitors: Competitor[], sinceMs: number): number {
+  return competitors.filter(
+    (c) => c.last_checked_at !== null && new Date(c.last_checked_at).getTime() > sinceMs,
+  ).length;
+}
+
+export function countSignalsSince(signals: SignalWithCompetitor[], sinceMs: number): number {
+  return signals.filter((s) => new Date(s.created_at).getTime() > sinceMs).length;
+}
+
 function byImpactThenRecency(a: SignalWithCompetitor, b: SignalWithCompetitor): number {
   const rank = IMPACT_RANK[a.impact] - IMPACT_RANK[b.impact];
   if (rank !== 0) return rank;

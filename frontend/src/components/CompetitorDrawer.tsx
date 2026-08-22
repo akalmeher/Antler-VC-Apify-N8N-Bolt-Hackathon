@@ -47,8 +47,9 @@ export function CompetitorDrawer() {
 
   const competitor = competitors.find((c) => c.id === selectedCompetitorId) ?? null;
   const theirs = competitor ? signalsForCompetitor(signals, competitor.id) : [];
-  const findings = theirs.slice(0, 4);
-  const pricingMenu = theirs.filter((s) => PRICING_MENU_CATEGORIES.includes(s.category));
+  const findings = theirs
+    .filter((s) => !WEAKNESS_CATEGORIES.includes(s.category))
+    .slice(0, 4);  const pricingMenu = theirs.filter((s) => PRICING_MENU_CATEGORIES.includes(s.category));
   const weaknesses = theirs.filter((s) => WEAKNESS_CATEGORIES.includes(s.category));
   const changes = theirs.filter((s) => s.signal_type === 'change');
   const actions = theirs.filter((s) => s.recommended_action).slice(0, 4);

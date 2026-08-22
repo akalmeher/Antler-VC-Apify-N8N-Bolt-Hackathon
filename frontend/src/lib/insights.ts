@@ -65,4 +65,4 @@ export function pickComplaint(signals: SignalWithCompetitor[]): SignalWithCompet
 }
 
 export const PRICING_MENU_CATEGORIES: Category[] = ['pricing', 'menu_product'];
-export const WEAKNESS_CATEGORIES: Category[] = ['reputation', 'hours'];
+export const WEAKNESS_CATEGORIES: Category[] = ['reputation'];

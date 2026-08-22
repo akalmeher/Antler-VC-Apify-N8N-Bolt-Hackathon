@@ -49,6 +49,7 @@ export interface Signal {
   why_it_matters: string;
   recommended_action: string;
   evidence: string | null;
+  source_url: string | null;
   is_read: boolean;
   created_at: string;
 }

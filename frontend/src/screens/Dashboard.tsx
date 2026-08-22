@@ -74,7 +74,7 @@ function TakeawayCard({
       type="button"
       onClick={onClick}
       disabled={!onClick}
-      className="hover-lift rounded-2xl border border-ink-border bg-surface p-5 text-left shadow-soft disabled:cursor-default"
+      className="hover-lift flex h-full w-full flex-col rounded-2xl border border-ink-border bg-surface p-5 text-left shadow-soft disabled:cursor-default"
     >
       <div className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider ${kickerClass}`}>
         <span className={`rounded-md p-1 ${iconClass}`}>{icon}</span>
@@ -84,7 +84,7 @@ function TakeawayCard({
         {title}
       </h3>
       <p className="mt-1.5 text-xs leading-relaxed text-muted">{body}</p>
-      {meta && <p className="mt-2 text-[11px] font-medium text-muted">{meta}</p>}
+      {meta && <p className="mt-auto pt-2 text-[11px] font-medium text-muted">{meta}</p>}
     </button>
   );
 }
@@ -171,8 +171,8 @@ export function Dashboard() {
 
       <LocationContext business={business} competitorCount={competitorCount} />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="animate-rise stagger-1">
+      <div className="grid items-stretch gap-4 md:grid-cols-3">
+        <div className="h-full animate-rise stagger-1">
           <TakeawayCard
             icon={<Sparkles className="h-4 w-4" />}
             kicker="Where the reflection breaks"
@@ -193,7 +193,7 @@ export function Dashboard() {
             onClick={opportunity ? () => openCompetitor(opportunity.competitor_id) : undefined}
           />
         </div>
-        <div className="animate-rise stagger-2">
+        <div className="h-full animate-rise stagger-2">
           <TakeawayCard
             icon={<Zap className="h-4 w-4" />}
             kicker="Biggest recent change"
@@ -226,7 +226,7 @@ export function Dashboard() {
             onClick={biggestChange ? () => openCompetitor(biggestChange.competitor_id) : undefined}
           />
         </div>
-        <div className="animate-rise stagger-3">
+        <div className="h-full animate-rise stagger-3">
           <TakeawayCard
             icon={<DollarSign className="h-4 w-4" />}
             kicker="Pricing pressure"

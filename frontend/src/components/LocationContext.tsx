@@ -1,6 +1,5 @@
-import { MapPin, Radar, Store } from 'lucide-react';
+import { MapPin, RefreshCw, Store } from 'lucide-react';
 import type { Business } from '@/lib/types';
-import { formatMiles } from '@/lib/insights';
 
 export function LocationContext({
   business,
@@ -13,7 +12,6 @@ export function LocationContext({
 
   const city = business.city?.trim() || null;
   const address = business.address?.trim() || null;
-  const radius = formatMiles(business.scan_radius_miles);
   const place = address ?? city;
 
   return (
@@ -35,9 +33,9 @@ export function LocationContext({
         </div>
       </div>
 
-      <div className="relative -left-6 hidden h-10 w-px bg-ink-border sm:block" />
+      <div className="relative -left-4 hidden h-10 w-px bg-ink-border sm:block" />
 
-      <div className="flex items-start gap-3">
+      <div className="relative left-2 flex items-start gap-3">
         <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-charcoal-50 text-charcoal">
           <Store className="h-4 w-4" />
         </span>
@@ -52,22 +50,18 @@ export function LocationContext({
         </div>
       </div>
 
-      <div className="relative -left-4 hidden h-10 w-px bg-ink-border sm:block" />
+      <div className="relative -right-2 hidden h-10 w-px bg-ink-border sm:block" />
 
-      <div className="flex items-start gap-3">
+      <div className="relative left-8 flex items-start gap-3">
         <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-charcoal-50 text-charcoal">
-          <Radar className="h-4 w-4" />
+          <RefreshCw className="h-4 w-4" />
         </span>
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
-            Discovery area
+            Monitoring
           </p>
-          <p className="mt-0.5 font-semibold tracking-tight text-charcoal">
-            {radius ?? 'Not set'}
-          </p>
-          <p className="text-sm text-muted">
-            {radius ? 'Nearby discovery area' : 'Choose a radius when finding competitors'}
-          </p>
+          <p className="mt-0.5 font-semibold tracking-tight text-charcoal">Every 6 hours</p>
+          <p className="text-sm text-muted">Automatic competitor checks</p>
         </div>
       </div>
     </div>

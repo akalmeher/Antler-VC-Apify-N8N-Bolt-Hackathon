@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Zap, Quote, Lightbulb, AlertTriangle, Sparkles } from 'lucide-react';
+import { Zap, Quote, Lightbulb, AlertTriangle, Sparkles, ExternalLink } from 'lucide-react';
 import { useRadar } from '@/lib/RadarContext';
 import { useNav } from '@/lib/nav';
 import {
@@ -93,15 +93,41 @@ function SignalCard({ signal }: { signal: SignalWithCompetitor }) {
           </InsightPanel>
 
           {signal.evidence && (
-            <InsightPanel
-              tone="evidence"
-              label="Evidence"
-              icon={<Quote className="h-3.5 w-3.5" />}
-            >
-              <blockquote className="font-serif text-sm italic leading-relaxed text-muted">
-                {signal.evidence}
-              </blockquote>
-            </InsightPanel>
+            signal.source_url ? (
+              <a
+                href={signal.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="group block rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-sage/30"
+                aria-label={`View source for evidence from ${signal.competitors?.name ?? 'competitor'}`}
+              >
+                <InsightPanel
+                  tone="evidence"
+                  label="Evidence"
+                  icon={<Quote className="h-3.5 w-3.5" />}
+                >
+                  <blockquote className="font-serif text-sm italic leading-relaxed text-muted">
+                    {signal.evidence}
+                  </blockquote>
+
+                  <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-sage group-hover:underline">
+                    View source
+                    <ExternalLink className="h-3 w-3" />
+                  </div>
+                </InsightPanel>
+              </a>
+            ) : (
+              <InsightPanel
+                tone="evidence"
+                label="Evidence"
+                icon={<Quote className="h-3.5 w-3.5" />}
+              >
+                <blockquote className="font-serif text-sm italic leading-relaxed text-muted">
+                  {signal.evidence}
+                </blockquote>
+              </InsightPanel>
+            )
           )}
         </div>
       </div>

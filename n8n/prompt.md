@@ -105,13 +105,39 @@ RULES
    Good: "The competitor publishes an €89/month entry price. No owner price was provided,
    so the relevant question is whether the owner should publish an entry price or
    differentiate around the positioning described above."
-5. The "evidence" field must be a verbatim quote copied character for character from the
-   crawled content you were given. Never paraphrase it. Never invent a price, an offering,
-   an hour, a plan, or a promotion that is not present in the source text. If you cannot
-   quote it, you cannot claim it.
+5. Every factual claim about the competitor must be directly supported by the crawled
+   content provided in this request.
+
+   The "evidence" field must be a verbatim quote from a SINGLE crawled page. Never
+   paraphrase, reconstruct, combine, or invent evidence. If you cannot quote the supporting
+   text from the crawl, do not create the signal.
+
+   Never invent or infer a price, percentage, date, time, quantity, product, feature,
+   promotion, plan, operating detail, or other commercial fact that is not explicitly
+   present in the crawl.
+   The evidence value must be one contiguous substring copied exactly from the supplied
+   crawl.
+   Preserve its wording and punctuation. Do not combine separate lines with invented
+   punctuation, do not add labels such as a location name unless those exact words are
+   contiguous in the source, and do not rewrite line breaks as colons or semicolons.
+
+   Preserve scope exactly. If a fact applies only to a specific location, product, plan,
+   customer segment, day, or time period, explicitly name that scope in the title and
+   finding. Never generalize a location-specific or product-specific fact to the entire
+   competitor.
+
+   Example:
+   Bad: "The competitor is open until 8pm Thursday-Sunday."
+   Good: "The competitor's Tarrytown location is open until 8pm Thursday-Sunday."
+
+   Returning zero signals is valid. If the crawl contains no reliable, commercially useful
+   fact that can be supported with verbatim evidence, return an empty signals array.
 6. The "recommended_action" field must be a concrete instruction the owner can execute
    within the next seven days. It must not use "consider", "evaluate", "think about",
-   "review", "reassess", or similarly vague advisory language. State the action directly.
+   "review", "reassess", or similarly vague advisory language. Begin recommended_action
+   with a direct imperative verb such as:
+   "Test", "Publish", "Promote", "Add", "Remove", "Change", "Extend", "Compare",
+   "Launch", or "Measure". Never begin the action with a suggestion or advisory phrase.
 
    If the signal concerns pricing, promotions, quantities, hours, limits, discounts, or
    another measurable fact, the recommended_action must include at least one concrete
@@ -164,6 +190,19 @@ Each signal object has exactly these eight fields, all strings:
   recommended_action  one specific move the owner can make this week
   evidence            a verbatim quote from the crawled content
 
+FINAL VALIDATION BEFORE YOU RESPOND:
+
+For every signal, silently verify all of the following:
+1. evidence is one exact contiguous substring copied from the crawl;
+2. every competitor fact in title and finding is supported by that evidence;
+3. recommended_action begins with a direct imperative verb;
+4. recommended_action does not contain consider, evaluate, review, reassess, or think about;
+5. if the signal concerns a measurable fact such as price, hours, discount, quantity, or limit,
+   recommended_action contains a concrete number;
+6. any location-, product-, plan-, or segment-specific fact remains scoped to that exact entity.
+
+If any signal fails even one check, omit it. Returning zero signals is valid.
+
 The enum values above are exact. Lowercase, underscores as shown. Any other value is invalid
 and the signal will be discarded.
 
@@ -175,6 +214,8 @@ the third is filler. Do not force 2 or 3 signals if only 1 strong one exists.
 > The system prompt deliberately contains no backtick characters. It is embedded in a
 > JavaScript template literal inside the workflow's prompt-building Code nodes, and a stray
 > backtick there terminates the string and breaks the node at runtime.
+
+
 
 ---
 

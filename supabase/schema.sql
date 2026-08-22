@@ -52,6 +52,7 @@ create table if not exists signals (
   why_it_matters text not null,
   recommended_action text not null,
   evidence text, -- quoted snippet from the crawled page
+  source_url text, -- exact crawled page that supports the evidence
   is_read boolean not null default false,
   created_at timestamptz default now(),
   constraint signals_signal_type_check check (signal_type in ('baseline', 'change')),

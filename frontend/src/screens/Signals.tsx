@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Zap, Quote, Lightbulb, AlertTriangle, Sparkles, ExternalLink } from 'lucide-react';
 import { useRadar } from '@/lib/RadarContext';
 import { useNav } from '@/lib/nav';
+import { useUi } from '@/lib/UiContext';
 import {
   relativeTime,
   CATEGORY_LABELS,
@@ -28,7 +29,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const selectClass =
   'rounded-[10px] border border-ink-border bg-ink-bg px-3 py-2 text-sm font-normal text-charcoal focus:border-brand-sage focus:outline-none focus:ring-2 focus:ring-brand-sage/20';
 
+const panelHoverClass = 'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft';
+
 function SignalCard({ signal }: { signal: SignalWithCompetitor }) {
+  const { openCompetitor } = useUi();
   const isChange = signal.signal_type === 'change';
   const findingLabel = isChange ? 'What changed' : 'What we found';
   const threatening = isThreatening(signal.category, signal.impact);
@@ -36,7 +40,8 @@ function SignalCard({ signal }: { signal: SignalWithCompetitor }) {
 
   return (
     <article
-      className={`hover-lift overflow-hidden rounded-2xl border bg-surface shadow-soft ${
+      onClick={() => openCompetitor(signal.competitor_id)}
+      className={`cursor-pointer overflow-hidden rounded-2xl border bg-surface shadow-soft ${
         threatening
           ? 'border-semantic-threatBorder'
           : isChange
@@ -64,44 +69,69 @@ function SignalCard({ signal }: { signal: SignalWithCompetitor }) {
         </div>
 
         <div className="mt-5 space-y-3.5">
-          <InsightPanel
-            tone={findingTone(signal.category, isChange, signal.impact)}
-            label={findingLabel}
-            icon={isChange ? <Sparkles className="h-3.5 w-3.5" /> : undefined}
-          >
-            <p className="text-sm leading-relaxed text-charcoal">{signal.finding}</p>
-          </InsightPanel>
+          <div className={panelHoverClass}>
+            <InsightPanel
+              tone={findingTone(signal.category, isChange, signal.impact)}
+              label={findingLabel}
+              icon={isChange ? <Sparkles className="h-3.5 w-3.5" /> : undefined}
+            >
+              <p className="text-sm leading-relaxed text-charcoal">{signal.finding}</p>
+            </InsightPanel>
+          </div>
 
-          <InsightPanel
-            tone={whyTone(signal.category)}
-            label="Why it matters"
-            icon={
-              signal.category === 'reputation' || signal.category === 'hours' ? (
-                <AlertTriangle className="h-3.5 w-3.5" />
-              ) : (
-                <Lightbulb className="h-3.5 w-3.5" />
-              )
-            }
-          >
-            <p className="text-sm leading-relaxed text-charcoal">{signal.why_it_matters}</p>
-          </InsightPanel>
+          <div className={panelHoverClass}>
+            <InsightPanel
+              tone={whyTone(signal.category)}
+              label="Why it matters"
+              icon={
+                signal.category === 'reputation' || signal.category === 'hours' ? (
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                ) : (
+                  <Lightbulb className="h-3.5 w-3.5" />
+                )
+              }
+            >
+              <p className="text-sm leading-relaxed text-charcoal">{signal.why_it_matters}</p>
+            </InsightPanel>
+          </div>
 
-          <InsightPanel tone="action" label="Your next move">
-            <p className="text-sm font-semibold leading-relaxed text-charcoal">
-              {signal.recommended_action}
-            </p>
-          </InsightPanel>
+          <div className={panelHoverClass}>
+            <InsightPanel tone="action" label="Your next move">
+              <p className="text-sm font-semibold leading-relaxed text-charcoal">
+                {signal.recommended_action}
+              </p>
+            </InsightPanel>
+          </div>
 
           {signal.evidence && (
             signal.source_url ? (
-              <a
-                href={signal.source_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="group block rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-sage/30"
-                aria-label={`View source for evidence from ${signal.competitors?.name ?? 'competitor'}`}
-              >
+              <div className={panelHoverClass}>
+                <a
+                  href={signal.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="group block rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-sage/30"
+                  aria-label={`View source for evidence from ${signal.competitors?.name ?? 'competitor'}`}
+                >
+                  <InsightPanel
+                    tone="evidence"
+                    label="Evidence"
+                    icon={<Quote className="h-3.5 w-3.5" />}
+                  >
+                    <blockquote className="font-serif text-sm italic leading-relaxed text-muted">
+                      {signal.evidence}
+                    </blockquote>
+
+                    <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-sage group-hover:underline">
+                      View source
+                      <ExternalLink className="h-3 w-3" />
+                    </div>
+                  </InsightPanel>
+                </a>
+              </div>
+            ) : (
+              <div className={panelHoverClass}>
                 <InsightPanel
                   tone="evidence"
                   label="Evidence"
@@ -110,23 +140,8 @@ function SignalCard({ signal }: { signal: SignalWithCompetitor }) {
                   <blockquote className="font-serif text-sm italic leading-relaxed text-muted">
                     {signal.evidence}
                   </blockquote>
-
-                  <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-sage group-hover:underline">
-                    View source
-                    <ExternalLink className="h-3 w-3" />
-                  </div>
                 </InsightPanel>
-              </a>
-            ) : (
-              <InsightPanel
-                tone="evidence"
-                label="Evidence"
-                icon={<Quote className="h-3.5 w-3.5" />}
-              >
-                <blockquote className="font-serif text-sm italic leading-relaxed text-muted">
-                  {signal.evidence}
-                </blockquote>
-              </InsightPanel>
+              </div>
             )
           )}
         </div>

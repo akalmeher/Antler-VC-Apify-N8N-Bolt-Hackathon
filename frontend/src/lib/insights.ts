@@ -1,5 +1,13 @@
 import { IMPACT_RANK } from '@/lib/format';
-import type { Category, Competitor, SignalWithCompetitor } from '@/lib/types';
+import type { Business, Category, Competitor, SignalWithCompetitor } from '@/lib/types';
+
+export function businessLocation(
+  business: Pick<Business, 'city' | 'address'> | null | undefined,
+): string | null {
+  const address = business?.address?.trim() || null;
+  const city = business?.city?.trim() || null;
+  return address || city || null;
+}
 
 export function formatMiles(value: number | null | undefined): string | null {
   if (value == null || Number.isNaN(value)) return null;

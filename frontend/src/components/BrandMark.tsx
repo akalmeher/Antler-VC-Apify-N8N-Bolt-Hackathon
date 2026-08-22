@@ -39,3 +39,29 @@ export function BrandIcon({
 }) {
   return <img src={ICON_SRC} alt="m.rror" className={`w-auto ${className}`} />;
 }
+
+export function BrandSweepIcon({
+  className = 'h-14',
+  active = true,
+}: {
+  className?: string;
+  active?: boolean;
+}) {
+  return (
+    <div
+      className={`relative inline-flex overflow-hidden ${
+        active ? 'animate-pulse-soft motion-reduce:animate-none' : ''
+      }`}
+    >
+      <BrandIcon className={className} />
+      {active && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden"
+        >
+          <span className="absolute inset-y-[-10%] left-0 w-[42%] bg-gradient-to-r from-transparent via-surface to-transparent opacity-80 animate-gloss-sweep" />
+        </span>
+      )}
+    </div>
+  );
+}

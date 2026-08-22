@@ -14,10 +14,10 @@ export interface Business {
   name: string;
   category: string;
   city: string | null;
+  address: string | null;
   offerings: string | null;
   created_at: string;
   // Optional nearby-search fields — omitted until those columns exist.
-  address?: string | null;
   scan_radius_miles?: number | null;
 }
 

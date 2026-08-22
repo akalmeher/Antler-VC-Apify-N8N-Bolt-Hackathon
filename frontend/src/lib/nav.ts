@@ -1,6 +1,13 @@
 import { createContext, useContext } from 'react';
 
-export type Route = 'dashboard' | 'competitors' | 'signals' | 'add' | 'account' | 'settings';
+export type Route =
+  | 'dashboard'
+  | 'competitors'
+  | 'signals'
+  | 'add'
+  | 'business'
+  | 'account'
+  | 'settings';
 
 export interface SignalsFilters {
   competitorId?: string;

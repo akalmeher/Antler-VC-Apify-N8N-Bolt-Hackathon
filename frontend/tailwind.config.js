@@ -96,6 +96,12 @@ export default {
           '0%, 100%': { opacity: '0.55', transform: 'scale(0.99)' },
           '50%': { opacity: '1', transform: 'scale(1.01)' },
         },
+        'gloss-sweep': {
+          '0%, 12%': { transform: 'translateX(-130%) skewX(-18deg)', opacity: '0' },
+          '22%': { opacity: '0.55' },
+          '42%': { transform: 'translateX(230%) skewX(-18deg)', opacity: '0' },
+          '100%': { transform: 'translateX(230%) skewX(-18deg)', opacity: '0' },
+        },
       },
       animation: {
         rise: 'rise 260ms ease-out both',
@@ -104,6 +110,7 @@ export default {
         'text-in': 'textIn 280ms ease-out both',
         'modal-in': 'modal-in 220ms ease-out both',
         'pulse-soft': 'pulse-soft 2200ms ease-in-out infinite',
+        'gloss-sweep': 'gloss-sweep 3200ms ease-in-out infinite',
       },
     },
   },

@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, LogOut, Settings, User } from 'lucide-react';
+import { Building2, ChevronDown, LogOut, Settings, User } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { businessLocation } from '@/lib/insights';
 import { useNav } from '@/lib/nav';
+import { useRadar } from '@/lib/RadarContext';
 
 export function AccountMenu() {
   const { session, logout } = useAuth();
   const { route, navigate } = useNav();
+  const { business } = useRadar();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -27,8 +30,10 @@ export function AccountMenu() {
 
   if (!session) return null;
 
-  const initial = (session.name.trim()[0] ?? session.email[0] ?? 'M').toUpperCase();
-  const onAccount = route === 'account' || route === 'settings';
+  const businessName = business?.name ?? session.restaurant;
+  const businessPlace = businessLocation(business);
+  const initial = (businessName.trim()[0] ?? session.name.trim()[0] ?? session.email[0] ?? 'M').toUpperCase();
+  const onAccount = route === 'account' || route === 'settings' || route === 'business';
 
   return (
     <div ref={rootRef} className="relative">
@@ -46,8 +51,15 @@ export function AccountMenu() {
         <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-navy font-serif text-sm font-semibold text-surface">
           {initial}
         </span>
-        <span className="hidden max-w-[7rem] truncate text-left text-sm font-semibold xl:block">
-          {session.name}
+        <span className="hidden min-w-0 text-left xl:block">
+          <span className="block max-w-[10rem] truncate text-sm font-semibold leading-tight">
+            {businessName}
+          </span>
+          {businessPlace && (
+            <span className="block max-w-[10rem] truncate text-[11px] font-medium text-muted">
+              {businessPlace}
+            </span>
+          )}
         </span>
         <ChevronDown className={`h-4 w-4 text-muted transition-transform duration-220 ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -59,6 +71,18 @@ export function AccountMenu() {
         >
           <p className="truncate px-3.5 py-2 text-xs text-muted">{session.email}</p>
           <span className="mx-3 block h-px bg-ink-border" />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              navigate('business');
+              setOpen(false);
+            }}
+            className="flex w-full items-center gap-2 px-3.5 py-2.5 text-sm text-navy transition-colors duration-220 hover:bg-ink-bg"
+          >
+            <Building2 className="h-4 w-4 text-muted" />
+            Your Business
+          </button>
           <button
             type="button"
             role="menuitem"

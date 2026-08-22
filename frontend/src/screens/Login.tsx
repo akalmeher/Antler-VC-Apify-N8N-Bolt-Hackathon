@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AuthShell } from '@/components/AuthShell';
-import { useAuth } from '@/lib/AuthContext';
+import { DEMO_AUTH, useAuth } from '@/lib/AuthContext';
 import { inputClass, isValidEmail } from '@/lib/forms';
 
 export function Login({
@@ -13,8 +13,8 @@ export function Login({
   onSuccess: () => void;
 }) {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(DEMO_AUTH.email);
+  const [password, setPassword] = useState(DEMO_AUTH.password);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -47,18 +47,18 @@ export function Login({
           onClick={onRegister}
           className="text-sm font-semibold text-charcoal transition-colors duration-220 hover:text-brand-sage"
         >
-          Create account
+          Create an account
         </button>
       }
     >
       <p className="animate-text-in text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
         Welcome back
       </p>
-      <h1 className="animate-text-in mt-3 font-serif text-3xl font-semibold tracking-tight text-navy stagger-text-2">
-        Log in
+      <h1 className="animate-text-in mt-3 font-serif text-3xl font-semibold leading-snug tracking-tight text-navy stagger-text-2 sm:text-4xl">
+        See what your market is doing.
       </h1>
       <p className="animate-text-in mt-3 text-sm leading-relaxed text-muted stagger-text-3">
-        Pick up the watchlist for your business.
+        Monitor competitors, catch meaningful changes, and know what to do next.
       </p>
 
       <form
@@ -94,6 +94,16 @@ export function Login({
         >
           {submitting ? 'Signing in…' : 'Log in'}
         </button>
+        <p className="text-center text-sm text-muted">
+          New to m.rror?{' '}
+          <button
+            type="button"
+            onClick={onRegister}
+            className="font-semibold text-charcoal transition-colors duration-220 hover:text-brand-sage"
+          >
+            Create an account
+          </button>
+        </p>
       </form>
     </AuthShell>
   );

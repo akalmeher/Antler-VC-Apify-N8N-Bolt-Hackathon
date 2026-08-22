@@ -1,11 +1,95 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Loader2, Map, MapPin, Radar, Search, Star } from 'lucide-react';
 import { useRadar } from '@/lib/RadarContext';
 import { discoverNearbyCompetitors } from '@/lib/api';
+import { businessLocation } from '@/lib/insights';
 import { inputClass } from '@/lib/forms';
-import { EmptyState, ErrorState, Skeleton } from '@/components/States';
+import { EmptyState, ErrorState } from '@/components/States';
+import { BrandSweepIcon } from '@/components/BrandMark';
 import { GoogleMapModal } from '@/components/GoogleMapModal';
 import type { DiscoverNearbyResponse, NearbyCompetitor } from '@/lib/types';
+
+const DISCOVERY_MESSAGES = [
+  'Mapping your discovery area…',
+  'Finding nearby competitors…',
+  'Checking which businesses are relevant…',
+  'Building your competitive shortlist…',
+];
+
+function lerp(from: number, to: number, t: number): number {
+  return from + (to - from) * Math.min(1, Math.max(0, t));
+}
+
+function simulatedDiscoveryProgress(elapsedMs: number): number {
+  if (elapsedMs < 400) return 9;
+  if (elapsedMs < 1800) return lerp(9, 25, (elapsedMs - 400) / 1400);
+  if (elapsedMs < 3600) return lerp(25, 50, (elapsedMs - 1800) / 1800);
+  if (elapsedMs < 5600) return lerp(50, 72, (elapsedMs - 3600) / 2000);
+  if (elapsedMs < 7800) return lerp(72, 88, (elapsedMs - 5600) / 2200);
+  if (elapsedMs < 11000) return lerp(88, 93, (elapsedMs - 7800) / 3200);
+  return Math.min(95, 93 + 2 * (1 - Math.exp(-(elapsedMs - 11000) / 8000)));
+}
+
+function DiscoveryProgress({ complete }: { complete: boolean }) {
+  const [pct, setPct] = useState(9);
+  const [msgIndex, setMsgIndex] = useState(0);
+  const startedAt = useRef(Date.now());
+
+  useEffect(() => {
+    if (complete) {
+      setPct(100);
+      return;
+    }
+    startedAt.current = Date.now();
+    const tick = () => setPct(simulatedDiscoveryProgress(Date.now() - startedAt.current));
+    tick();
+    const id = window.setInterval(tick, 80);
+    return () => window.clearInterval(id);
+  }, [complete]);
+
+  useEffect(() => {
+    if (complete) return;
+    const id = window.setInterval(() => {
+      setMsgIndex((i) => (i + 1) % DISCOVERY_MESSAGES.length);
+    }, 2400);
+    return () => window.clearInterval(id);
+  }, [complete]);
+
+  const message = complete ? 'Nearby competitors found' : DISCOVERY_MESSAGES[msgIndex];
+
+  return (
+    <section className="flex min-h-[22rem] items-center justify-center rounded-2xl border border-ink-border bg-surface px-6 py-14 shadow-soft animate-fade sm:min-h-[26rem]">
+      <div className="mx-auto w-full max-w-md text-center">
+        <div className="flex justify-center">
+          <BrandSweepIcon className="h-16 sm:h-[4.5rem]" active={!complete} />
+        </div>
+        <h2 className="mt-6 font-serif text-xl font-semibold leading-snug tracking-tight text-charcoal sm:text-2xl">
+          Looking into your local market
+        </h2>
+        <p key={message} className="mt-2 animate-text-in text-sm leading-relaxed text-muted">
+          {message}
+        </p>
+        <div
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(pct)}
+          aria-label="Discovery progress"
+          className="mx-auto mt-6 h-2 w-full overflow-hidden rounded-full bg-charcoal-50"
+        >
+          <div
+            className={`h-full rounded-full bg-brand-sage ${
+              complete
+                ? 'transition-[width] duration-500 ease-out'
+                : 'transition-[width] duration-150 ease-out'
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
 
 const RADIUS_OPTIONS = [1, 3, 5];
 
@@ -157,16 +241,28 @@ function DiscoveryCard({
 export function NearbyDiscovery() {
   const { business, competitors, startAddCompetitor } = useRadar();
 
+  const savedLocation = businessLocation(business) ?? '';
   const [address, setAddress] = useState('');
+  const [locationEdited, setLocationEdited] = useState(false);
   const [radiusMiles, setRadiusMiles] = useState(3);
   const [searchTerm, setSearchTerm] = useState('taco restaurant');
   const [touched, setTouched] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [completing, setCompleting] = useState(false);
   const [result, setResult] = useState<DiscoverNearbyResponse | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [monitorStates, setMonitorStates] = useState<Record<string, MonitorState>>({});
   const [monitorErrors, setMonitorErrors] = useState<Record<string, string>>({});
   const [mapCompetitor, setMapCompetitor] = useState<NearbyCompetitor | null>(null);
+
+  useEffect(() => {
+    if (locationEdited) return;
+    if (!savedLocation) return;
+    setAddress(savedLocation);
+  }, [savedLocation, locationEdited]);
+
+  const usingSavedLocation = savedLocation !== '' && address.trim() === savedLocation;
+  const showResetLocation = savedLocation !== '' && address.trim() !== savedLocation;
 
   const addressError = address.trim() === '' ? 'Enter the location to search around.' : null;
   const termError = searchTerm.trim() === '' ? 'Tell us what to look for.' : null;
@@ -192,6 +288,7 @@ export function NearbyDiscovery() {
     setTouched(true);
     if (!valid) return;
     setSearching(true);
+    setCompleting(false);
     setSearchError(null);
     setResult(null);
     setMonitorStates({});
@@ -204,14 +301,22 @@ export function NearbyDiscovery() {
         search_term: searchTerm.trim(),
       });
       setResult(data);
+      setSearching(false);
+      setCompleting(true);
     } catch (err) {
       setSearchError(
         err instanceof Error ? err.message : 'The discovery service did not respond.',
       );
-    } finally {
       setSearching(false);
+      setCompleting(false);
     }
   };
+
+  useEffect(() => {
+    if (!completing) return;
+    const timeout = window.setTimeout(() => setCompleting(false), 900);
+    return () => window.clearTimeout(timeout);
+  }, [completing]);
 
   const handleMonitor = async (competitor: NearbyCompetitor, key: string) => {
     if (!competitor.website) return;
@@ -248,13 +353,34 @@ export function NearbyDiscovery() {
           <input
             className={inputClass}
             value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="1700 E Riverside Dr, Austin, TX 78741"
+            onChange={(e) => {
+              setLocationEdited(true);
+              setAddress(e.target.value);
+            }}
+            placeholder="Street address or city"
             autoComplete="street-address"
           />
-          {touched && addressError && (
-            <p className="mt-1 text-xs text-semantic-threat">{addressError}</p>
-          )}
+          <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
+            {usingSavedLocation ? (
+              <p className="text-xs text-muted">Using your business location</p>
+            ) : showResetLocation ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setAddress(savedLocation);
+                  setLocationEdited(false);
+                }}
+                className="text-xs font-semibold text-charcoal transition-colors duration-220 hover:text-brand-sage"
+              >
+                Reset to business address
+              </button>
+            ) : (
+              <span />
+            )}
+            {touched && addressError && (
+              <p className="text-xs text-semantic-threat">{addressError}</p>
+            )}
+          </div>
         </div>
 
         <div>
@@ -300,55 +426,29 @@ export function NearbyDiscovery() {
           )}
           <button
             type="submit"
-            disabled={searching}
+            disabled={searching || completing}
             className="hover-lift inline-flex items-center gap-2 rounded-[10px] bg-charcoal px-5 py-2.5 text-sm font-semibold text-surface shadow-soft transition-colors duration-220 hover:bg-charcoal-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {searching ? (
+            {searching || completing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Search className="h-4 w-4" />
             )}
-            {searching ? 'Looking…' : 'Find nearby competitors'}
+            {searching || completing ? 'Looking…' : 'Find nearby competitors'}
           </button>
         </div>
       </form>
 
-      {searching && (
-        <div className="animate-fade space-y-4">
-          <div className="flex items-start gap-3 rounded-2xl border border-ink-border bg-surface p-5 shadow-soft">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 animate-pulse items-center justify-center rounded-xl bg-charcoal-50 text-charcoal">
-              <Radar className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="font-serif text-base font-semibold tracking-tight text-charcoal">
-                Looking into your local market…
-              </p>
-              <p className="mt-1 text-sm text-muted">
-                m.rror is finding businesses within your selected radius.
-              </p>
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="rounded-2xl border border-ink-border bg-surface p-4 shadow-soft">
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="mt-4 h-4 w-2/3" />
-                <Skeleton className="mt-2 h-3 w-1/2" />
-                <Skeleton className="mt-4 h-8 w-32" />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {(searching || completing) && <DiscoveryProgress complete={completing} />}
 
-      {!searching && searchError && (
+      {!searching && !completing && searchError && (
         <ErrorState
           title="We couldn’t search this area right now. Please try again."
           message={searchError}
         />
       )}
 
-      {!searching && result && result.competitors.length > 0 && (
+      {!searching && !completing && result && result.competitors.length > 0 && (
         <section className="space-y-4">
           <p className="animate-text-in text-sm font-semibold text-charcoal">
             {resultsSummary(result.count, result.radius_miles)}
@@ -372,7 +472,7 @@ export function NearbyDiscovery() {
         </section>
       )}
 
-      {!searching && result && result.competitors.length === 0 && (
+      {!searching && !completing && result && result.competitors.length === 0 && (
         <EmptyState
           icon={<Radar className="h-6 w-6" />}
           title="Nothing showed up in the mirror"

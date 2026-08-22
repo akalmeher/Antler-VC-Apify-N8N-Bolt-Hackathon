@@ -16,6 +16,7 @@ import { Login } from '@/screens/Login';
 import { Register } from '@/screens/Register';
 import { Account } from '@/screens/Account';
 import { Settings } from '@/screens/Settings';
+import { Business } from '@/screens/Business';
 
 type PublicView = 'landing' | 'login' | 'register';
 
@@ -75,8 +76,7 @@ function AppShell() {
     return (
       <Landing
         onEnter={() => setPublicView('register')}
-        // Demo shortcut: skip the auth flow and open the dashboard directly.
-        onLogin={enterApp}
+        onLogin={() => setPublicView('login')}
       />
     );
   }
@@ -121,6 +121,7 @@ function AppShell() {
               {route === 'competitors' && <Competitors />}
               {route === 'signals' && <Signals />}
               {route === 'add' && <AddCompetitor />}
+              {route === 'business' && <Business />}
               {route === 'account' && <Account />}
               {route === 'settings' && <Settings />}
             </main>

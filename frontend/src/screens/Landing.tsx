@@ -272,6 +272,19 @@ export function Landing({
           </section>
         </Reveal>
       </main>
+
+      <footer className="border-t border-ink-border">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
+          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
+            Built with
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-12 gap-y-6 sm:gap-x-16">
+            <img src="/tech/apify.svg" alt="Apify" className="h-6 w-auto sm:h-7" />
+            <img src="/tech/n8n.svg" alt="n8n" className="h-6 w-auto sm:h-7" />
+            <img src="/tech/bolt.svg" alt="Bolt" className="h-5 w-auto sm:h-6" />
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

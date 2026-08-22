@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AuthShell } from '@/components/AuthShell';
-import { useAuth } from '@/lib/AuthContext';
+import { DEMO_AUTH, useAuth } from '@/lib/AuthContext';
 import { inputClass, isValidEmail } from '@/lib/forms';
 
 export function Register({
@@ -13,11 +13,10 @@ export function Register({
   onSuccess: () => void;
 }) {
   const { register } = useAuth();
-  const [name, setName] = useState('');
-  const [restaurant, setRestaurant] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
+  const [name, setName] = useState(DEMO_AUTH.name);
+  const [restaurant, setRestaurant] = useState(DEMO_AUTH.restaurant);
+  const [email, setEmail] = useState(DEMO_AUTH.email);
+  const [password, setPassword] = useState(DEMO_AUTH.password);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -38,10 +37,6 @@ export function Register({
     }
     if (password.length < 8) {
       setError('Use at least 8 characters for your password.');
-      return;
-    }
-    if (password !== confirm) {
-      setError('Passwords do not match.');
       return;
     }
     setSubmitting(true);
@@ -69,8 +64,8 @@ export function Register({
       <p className="animate-text-in text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
         Get started
       </p>
-      <h1 className="animate-text-in mt-3 font-serif text-3xl font-semibold tracking-tight text-navy stagger-text-2">
-        Create your account
+      <h1 className="animate-text-in mt-3 font-serif text-3xl font-semibold leading-snug tracking-tight text-navy stagger-text-2 sm:text-4xl">
+        Create an account
       </h1>
       <p className="animate-text-in mt-3 text-sm leading-relaxed text-muted stagger-text-3">
         Then add the local businesses you actually compete with.
@@ -81,13 +76,13 @@ export function Register({
         className="mt-8 space-y-4 rounded-2xl border border-ink-border bg-surface p-5 shadow-soft sm:p-6"
       >
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-navy-500">Your name</label>
+          <label className="mb-1.5 block text-sm font-medium text-navy-500">Name</label>
           <input
             className={inputClass}
             autoComplete="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Maria Chen"
+            placeholder="Alex Rivera"
           />
         </div>
         <div>
@@ -118,17 +113,6 @@ export function Register({
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 8 characters"
-          />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-navy-500">Confirm password</label>
-          <input
-            className={inputClass}
-            type="password"
-            autoComplete="new-password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
           />
         </div>
         {error && <p className="text-sm text-semantic-threat">{error}</p>}
@@ -139,6 +123,16 @@ export function Register({
         >
           {submitting ? 'Creating account…' : 'Create account'}
         </button>
+        <p className="text-center text-sm text-muted">
+          Already have an account?{' '}
+          <button
+            type="button"
+            onClick={onLogin}
+            className="font-semibold text-charcoal transition-colors duration-220 hover:text-brand-sage"
+          >
+            Log in
+          </button>
+        </p>
       </form>
     </AuthShell>
   );

@@ -15,7 +15,7 @@ import type {
 export async function fetchBusiness(): Promise<Business | null> {
   const { data, error } = await supabase
     .from('businesses')
-    .select('id, name, category, city, offerings, created_at')
+    .select('id, name, category, city, address, offerings, created_at')
     .eq('id', BUSINESS_ID)
     .maybeSingle();
   if (error) throw new Error(error.message);

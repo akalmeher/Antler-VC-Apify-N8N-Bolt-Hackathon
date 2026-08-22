@@ -1,5 +1,6 @@
 import { MapPin, RefreshCw, Store } from 'lucide-react';
 import type { Business } from '@/lib/types';
+import { businessLocation } from '@/lib/insights';
 
 export function LocationContext({
   business,
@@ -11,8 +12,7 @@ export function LocationContext({
   if (!business) return null;
 
   const city = business.city?.trim() || null;
-  const address = business.address?.trim() || null;
-  const place = address ?? city;
+  const place = businessLocation(business);
 
   return (
     <div className="grid gap-4 rounded-2xl border border-ink-border bg-surface px-5 py-4 shadow-soft sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center sm:gap-0">
@@ -28,7 +28,7 @@ export function LocationContext({
             {place ?? 'Location not set'}
           </p>
           <p className="text-sm text-muted">
-            {address && city && address !== city ? city : `Your Company: ${business.name}`}
+            {place && city && place !== city ? city : `Your Company: ${business.name}`}
           </p>
         </div>
       </div>

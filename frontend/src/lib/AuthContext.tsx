@@ -11,6 +11,18 @@ const USERS_KEY = 'mrror.users';
 const SESSION_KEY = 'mrror.session';
 const SETTINGS_KEY = 'mrror.settings';
 
+/**
+ * Temporary demo auth credentials for the hackathon UI.
+ * Replace login/register in this file with Supabase Auth later.
+ * Do not store service-role keys or other secrets here.
+ */
+export const DEMO_AUTH = {
+  email: 'demo@mrror.app',
+  password: 'mirror2026',
+  name: 'Alex Rivera',
+  restaurant: 'Taco Fuego',
+} as const;
+
 export interface AccountProfile {
   email: string;
   name: string;
@@ -82,6 +94,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback((email: string, password: string) => {
     const normalized = email.trim().toLowerCase();
+    // Demo path: accept the prefilled hackathon credentials without a prior signup.
+    if (normalized === DEMO_AUTH.email && password === DEMO_AUTH.password) {
+      persistSession({
+        email: DEMO_AUTH.email,
+        name: DEMO_AUTH.name,
+        restaurant: DEMO_AUTH.restaurant,
+      });
+      return;
+    }
     const user = readUsers().find((u) => u.email === normalized);
     if (!user || user.password !== password) {
       throw new Error('That email or password does not match.');
@@ -92,6 +113,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useCallback(
     (input: { name: string; restaurant: string; email: string; password: string }) => {
       const email = input.email.trim().toLowerCase();
+      // Demo path: creating an account with the prefilled credentials enters the app.
+      if (email === DEMO_AUTH.email && input.password === DEMO_AUTH.password) {
+        persistSession({
+          email: DEMO_AUTH.email,
+          name: input.name.trim() || DEMO_AUTH.name,
+          restaurant: input.restaurant.trim() || DEMO_AUTH.restaurant,
+        });
+        return;
+      }
       const users = readUsers();
       if (users.some((u) => u.email === email)) {
         throw new Error('An account with that email already exists. Try logging in.');

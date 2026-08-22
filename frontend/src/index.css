@@ -71,7 +71,8 @@ body {
     transform: none;
     transition: none;
   }
-  .animate-pulse-soft {
+  .animate-pulse-soft,
+  .animate-gloss-sweep {
     animation: none;
   }
 }

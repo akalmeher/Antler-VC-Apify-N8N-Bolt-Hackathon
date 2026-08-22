@@ -6,6 +6,7 @@ create table if not exists businesses (
   name text not null,
   -- plain text so other verticals are possible later; MVP only ships restaurants
   category text not null default 'restaurant',
+  address text,
   city text,
   -- free text describing what they sell and at what price; feeds the LLM prompt
   offerings text,

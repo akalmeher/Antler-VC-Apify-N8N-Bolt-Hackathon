@@ -1,41 +1,104 @@
--- Demo data. Snapshots and signals are intentionally absent: they must come from a real scan.
+-- m.rror hackathon demo seed
+-- Mission Fuego — San Francisco
+--
+-- Snapshots and signals are intentionally absent.
+-- They must come from real scans through the production pipeline.
 
-insert into businesses (id, name, category, city, offerings)
+insert into businesses (
+  id,
+  name,
+  category,
+  address,
+  city,
+  offerings
+)
 values (
   '11111111-1111-4111-8111-111111111111',
-  'Taco Fuego', 'restaurant', 'Austin, TX',
-  'Counter-service tacos and breakfast burritos. Street tacos $3.75 each, breakfast burrito $8.50, weekday lunch plate (3 tacos + chips) $12.95. Open 7am-3pm. Strong breakfast rush, weak lunch traffic.'
+  'Mission Fuego',
+  'restaurant',
+  null,
+  'Mission District, San Francisco, CA',
+  'Fast-casual Mission District taqueria serving tacos, breakfast burritos, and lunch plates. Street tacos $4.25 each, breakfast burrito $10.50, weekday lunch plate: 3 tacos + chips for $14.95. Open Monday-Friday 7am-4pm and Saturday-Sunday 8am-4pm. Strong breakfast traffic from nearby workers and students, but weaker weekday lunch and limited evening business.'
 )
-on conflict (id) do nothing;
+on conflict (id) do update set
+  name = excluded.name,
+  category = excluded.category,
+  address = excluded.address,
+  city = excluded.city,
+  offerings = excluded.offerings;
 
--- Two competitors for the demo:
---   1. El Chilito — a real, live Austin counter-service taqueria. Its menu is
---      server-rendered HTML with prices as plain text (no PDF, no iframe), so the
---      crawler actually sees numbers. Proves the pipeline survives the real web.
---   2. Media Luna Taqueria — the page in demo-site/ that we control and edit on
---      stage, so a real change can be detected live. REPLACE the placeholder URL
---      below with the public URL you get after hosting it (see demo-site/README.md);
---      localhost and file:// will not work because Apify crawls from the cloud.
 
-insert into competitors (business_id, name, url, page_urls)
-select v.business_id, v.name, v.url, v.page_urls
-from (
-  values
-    (
-      '11111111-1111-4111-8111-111111111111'::uuid,
-      'El Chilito',
-      'https://www.elchilito.com/',
-      array['https://www.elchilito.com/menu']
-    ),
-    (
-      '11111111-1111-4111-8111-111111111111'::uuid,
-      'Media Luna Taqueria',
-      'https://effulgent-semifreddo-401290.netlify.app/',
-      array['https://effulgent-semifreddo-401290.netlify.app/']
-    )
-) as v(business_id, name, url, page_urls)
-where not exists (
-  select 1 from competitors c
-  where c.business_id = v.business_id
-    and c.name = v.name
-);
+-- Final San Francisco competitor watchlist.
+-- Competitors start pending so a restored demo generates fresh,
+-- grounded snapshots and signals through the real scan workflow.
+
+insert into competitors (
+  id,
+  business_id,
+  name,
+  url,
+  page_urls,
+  status
+)
+values
+  (
+    '92e03756-10ec-45f7-9df2-36232dc550a2',
+    '11111111-1111-4111-8111-111111111111',
+    'Buena Vida Cantina on Belden',
+    'http://cantinaonbelden.com/',
+    array['http://cantinaonbelden.com/'],
+    'pending'
+  ),
+  (
+    '301efd70-b426-4b07-a0ee-3f78d2aac5b4',
+    '11111111-1111-4111-8111-111111111111',
+    'La China Poblana',
+    'https://lachinapoblanarestaurantca.com/',
+    array['https://lachinapoblanarestaurantca.com/'],
+    'pending'
+  ),
+  (
+    'efc53d8c-5ffe-4ad8-a37d-aedfcbcd3af6',
+    '11111111-1111-4111-8111-111111111111',
+    'Street Taco',
+    'http://streettacosf.com/',
+    array['http://streettacosf.com/'],
+    'pending'
+  ),
+  (
+    'c149ba94-d445-4ff9-97cd-888a3411614c',
+    '11111111-1111-4111-8111-111111111111',
+    'Taqueria Dos Charros San Francisco',
+    'https://ordertaqueriadoscharros.com/',
+    array['https://ordertaqueriadoscharros.com/'],
+    'pending'
+  ),
+  (
+    '6fea4bc7-8e89-407e-b1ac-b859b100d321',
+    '11111111-1111-4111-8111-111111111111',
+    'Taqueria Mana',
+    'https://taqueriamanacalifornia.com/',
+    array['https://taqueriamanacalifornia.com/'],
+    'pending'
+  ),
+  (
+    '1840f5bd-a332-4a95-9859-08b3c4e94047',
+    '11111111-1111-4111-8111-111111111111',
+    'Tropisueno',
+    'https://www.tropisueno.com/',
+    array['https://www.tropisueno.com/'],
+    'pending'
+  ),
+  (
+    '2cea0842-4378-47f2-b8c7-4695f8aa4c23',
+    '11111111-1111-4111-8111-111111111111',
+    'Uno Dos Tacos',
+    'https://unodostacos.com/',
+    array['https://unodostacos.com/'],
+    'pending'
+  )
+on conflict (id) do update set
+  business_id = excluded.business_id,
+  name = excluded.name,
+  url = excluded.url,
+  page_urls = excluded.page_urls;
